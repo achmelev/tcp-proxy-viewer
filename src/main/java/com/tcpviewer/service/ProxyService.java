@@ -156,4 +156,29 @@ public class ProxyService implements DataCaptureListener {
                     connectionId, e.getMessage(), e);
         }
     }
+
+    /**
+     * Implementation of DataCaptureListener.onConnectionClosed
+     * Called by ProxyConnectionHandler when a connection is fully closed.
+     */
+    @Override
+    public void onConnectionClosed(UUID connectionId) {
+        try {
+            ConnectionInfo connection = connectionManager.getConnection(connectionId);
+            if (connection == null) {
+                logger.warn("Received close notification for unknown connection: {}", connectionId);
+                return;
+            }
+
+            // Mark connection as closed
+            connectionManager.closeConnection(connectionId);
+
+            logger.info("Connection closed: {} - Total bytes: {}",
+                    connection.getDisplayName(), connection.getTotalBytes());
+
+        } catch (Exception e) {
+            logger.error("Error processing connection closure for {}: {}",
+                    connectionId, e.getMessage(), e);
+        }
+    }
 }

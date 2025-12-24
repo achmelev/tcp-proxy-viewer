@@ -88,6 +88,17 @@ public class ProxyConnectionHandler implements Runnable {
         } finally {
             closeSocket(clientSocket);
             closeSocket(targetSocket);
+
+            // Notify listener that connection has closed
+            if (listener != null) {
+                try {
+                    listener.onConnectionClosed(connectionId);
+                } catch (Exception e) {
+                    // Log but don't rethrow - connection is already closed
+                    logger.error("Error in connection closed callback for {}: {}",
+                            connectionId, e.getMessage());
+                }
+            }
         }
     }
 
