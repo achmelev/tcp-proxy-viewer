@@ -64,42 +64,19 @@ public class ErrorClassifier {
 
         // Category-based classification
         switch (category) {
-            case INITIALIZATION:
-                // Any initialization failure is fatal - app can't start properly
+            case  INITIALIZATION:
+            case  UI_OPERATION:
+                // Individual connection/data errors are recoverable
                 return ErrorSeverity.FATAL;
 
             case PROXY_SERVER:
-                // Server binding failures are fatal (port in use, permission denied)
-                if (throwable instanceof BindException ||
-                    (throwable instanceof IOException &&
-                     throwable.getMessage() != null &&
-                     (throwable.getMessage().contains("Address already in use") ||
-                      throwable.getMessage().contains("Permission denied")))) {
-                    return ErrorSeverity.FATAL;
-                }
-                // Other proxy server errors might be recoverable
-                return ErrorSeverity.RECOVERABLE;
-
             case CONNECTION_HANDLING:
             case DATA_PROCESSING:
             case NETWORK_IO:
                 // Individual connection/data errors are recoverable
                 return ErrorSeverity.RECOVERABLE;
-
-            case UI_OPERATION:
-                // UI errors are generally recoverable unless during initialization
-                if (isInitializationPhase(throwable)) {
-                    return ErrorSeverity.FATAL;
-                }
-                return ErrorSeverity.RECOVERABLE;
-
-            case SYSTEM_RESOURCE:
-                // System resource errors are typically fatal
-                return ErrorSeverity.FATAL;
-
             default:
-                // Default to recoverable to be safe
-                return ErrorSeverity.RECOVERABLE;
+                return ErrorSeverity.FATAL;
         }
     }
 
@@ -159,11 +136,6 @@ public class ErrorClassifier {
 
             case NETWORK_IO:
                 return "A network error occurred: " + getSimpleMessage(throwable);
-
-            case SYSTEM_RESOURCE:
-                return "A system resource error occurred: " + getSimpleMessage(throwable) + ". " +
-                       "The application may not function correctly.";
-
             default:
                 return "An unexpected error occurred: " + getSimpleMessage(throwable);
         }

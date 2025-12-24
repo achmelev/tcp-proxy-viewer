@@ -146,7 +146,7 @@ class ProxyServiceTest {
         }
 
         @Override
-        public void handleError(Throwable throwable, ErrorCategory category) {
+        public void handleExpectedException(Throwable throwable, ErrorCategory category) {
             handleErrorCallCount++;
             lastThrowable = throwable;
             lastCategory = category;

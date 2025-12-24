@@ -11,7 +11,9 @@ public enum ErrorCategory {
     DATA_PROCESSING("Data Processing"),
     UI_OPERATION("User Interface"),
     NETWORK_IO("Network I/O"),
-    SYSTEM_RESOURCE("System Resource");
+    UNCAUGHT("Uncaught"),
+    ;
+
 
     private final String displayName;
 

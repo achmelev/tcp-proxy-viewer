@@ -30,13 +30,23 @@ public class ErrorHandlerService {
     }
 
     /**
+     * Handles an exoected exception
+     *
+     * @param throwable the exception that occurred
+     * @param category the category of the error
+     */
+    public void handleExpectedException(Throwable throwable, ErrorCategory category) {
+        handleError(throwable, category);
+    }
+
+    /**
      * Handles an error by classifying it, logging it, showing a dialog, and
      * potentially shutting down the application.
      *
      * @param throwable the exception that occurred
      * @param category the category of the error
      */
-    public void handleError(Throwable throwable, ErrorCategory category) {
+    private void handleError(Throwable throwable, ErrorCategory category) {
         if (throwable == null || category == null) {
             logger.error("handleError called with null parameter: throwable={}, category={}",
                         throwable, category);
@@ -55,41 +65,10 @@ public class ErrorHandlerService {
 
 
 
-        } catch (Exception e) {
+        } catch (Throwable e) {
             // Failsafe: If error handling itself fails, log to console
             logger.error("CRITICAL: Error handler failed while processing error", e);
             logger.error("Original error was: {}", throwable.getMessage(), throwable);
-            System.err.println("CRITICAL ERROR: Error handler failed!");
-            e.printStackTrace();
-            throwable.printStackTrace();
-        }
-    }
-
-    /**
-     * Handles an error that was already classified into an ErrorContext.
-     *
-     * @param errorContext the complete error context
-     */
-    public void handleError(ErrorContext errorContext) {
-        if (errorContext == null) {
-            logger.error("handleError called with null errorContext");
-            return;
-        }
-
-        try {
-            // Log the error
-            logError(errorContext);
-
-            // Show error dialog to user
-            errorDialogService.showErrorDialog(errorContext);
-        } catch (Exception e) {
-            // Failsafe: If error handling itself fails, log to console
-            logger.error("CRITICAL: Error handler failed while processing error context", e);
-            logger.error("Original error was: {}", errorContext.getThrowable().getMessage(),
-                        errorContext.getThrowable());
-            System.err.println("CRITICAL ERROR: Error handler failed!");
-            e.printStackTrace();
-            errorContext.getThrowable().printStackTrace();
         }
     }
 
@@ -104,11 +83,8 @@ public class ErrorHandlerService {
         logger.error("Uncaught exception in thread '{}': {}",
                     thread.getName(), throwable.getMessage(), throwable);
 
-        // Determine category based on thread name
-        ErrorCategory category = categorizeFromThread(thread);
-
         // Handle the error
-        handleError(throwable, category);
+        handleError(throwable, ErrorCategory.UNCAUGHT);
     }
 
     /**
@@ -132,23 +108,5 @@ public class ErrorHandlerService {
         }
     }
 
-    /**
-     * Attempts to determine error category from thread name.
-     */
-    private ErrorCategory categorizeFromThread(Thread thread) {
-        String threadName = thread.getName().toLowerCase();
 
-        if (threadName.contains("javafx") || threadName.contains("fx")) {
-            return ErrorCategory.UI_OPERATION;
-        } else if (threadName.contains("proxy") || threadName.contains("server")) {
-            return ErrorCategory.PROXY_SERVER;
-        } else if (threadName.contains("connection") || threadName.contains("forwarder")) {
-            return ErrorCategory.CONNECTION_HANDLING;
-        } else if (threadName.contains("pool") || threadName.contains("executor")) {
-            return ErrorCategory.NETWORK_IO;
-        } else {
-            // Default category for unknown threads
-            return ErrorCategory.SYSTEM_RESOURCE;
-        }
-    }
 }

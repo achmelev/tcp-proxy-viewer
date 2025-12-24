@@ -171,10 +171,7 @@ public class MainController {
             }
         } catch (IOException e) {
             logger.error("Failed to open start dialog", e);
-            errorHandlerService.handleError(e, ErrorCategory.UI_OPERATION);
-        } catch (Exception e) {
-            logger.error("Failed to start proxy session", e);
-            errorHandlerService.handleError(e, ErrorCategory.PROXY_SERVER);
+            errorHandlerService.handleExpectedException(e, ErrorCategory.UI_OPERATION);
         }
     }
 
@@ -184,15 +181,10 @@ public class MainController {
     @FXML
     private void onStopMenuClicked() {
         logger.info("Stop menu clicked");
-        try {
-            proxyService.stopProxySession();
-            setStatus("Idle");
-            setProxyRunning(false);
-            logger.info("Proxy session stopped");
-        } catch (Exception e) {
-            logger.error("Failed to stop proxy session", e);
-            errorHandlerService.handleError(e, ErrorCategory.PROXY_SERVER);
-        }
+        proxyService.stopProxySession();
+        setStatus("Idle");
+        setProxyRunning(false);
+        logger.info("Proxy session stopped");
     }
 
     /**

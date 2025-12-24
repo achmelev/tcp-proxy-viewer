@@ -91,7 +91,7 @@ public class ProxyServer implements Runnable {
             logger.error("Failed to start proxy server: {}", e.getMessage(), e);
             // Server cannot start - this is a fatal error
             if (errorHandlerService != null) {
-                errorHandlerService.handleError(e, ErrorCategory.PROXY_SERVER);
+                errorHandlerService.handleExpectedException(e, ErrorCategory.PROXY_SERVER);
             }
             return;
         } finally {

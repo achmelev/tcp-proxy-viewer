@@ -139,28 +139,23 @@ public class ProxyService implements DataCaptureListener {
      */
     @Override
     public void onDataCaptured(UUID connectionId, byte[] data, Direction direction) {
-        try {
-            // Connection should already be registered by onConnectionAccepted
-            ConnectionInfo connection = connectionManager.getConnection(connectionId);
-            if (connection == null) {
-                logger.warn("Received data for unregistered connection: {}", connectionId);
-                return;
-            }
 
-            // Process data and create packet
-            DataPacket packet = dataProcessor.process(data, direction);
-
-            // Add to connection
-            connectionManager.addDataPacket(connectionId, packet);
-
-            logger.trace("Data captured for connection {}: {} bytes, direction: {}",
-                    connectionId, data.length, direction);
-
-        } catch (Exception e) {
-            logger.error("Error processing captured data for connection {}: {}",
-                    connectionId, e.getMessage(), e);
-            errorHandlerService.handleError(e, ErrorCategory.DATA_PROCESSING);
+        // Connection should already be registered by onConnectionAccepted
+        ConnectionInfo connection = connectionManager.getConnection(connectionId);
+        if (connection == null) {
+            logger.warn("Received data for unregistered connection: {}", connectionId);
+            return;
         }
+
+        // Process data and create packet
+        DataPacket packet = dataProcessor.process(data, direction);
+
+        // Add to connection
+        connectionManager.addDataPacket(connectionId, packet);
+
+        logger.trace("Data captured for connection {}: {} bytes, direction: {}",
+                connectionId, data.length, direction);
+
     }
 
     /**
@@ -169,23 +164,18 @@ public class ProxyService implements DataCaptureListener {
      */
     @Override
     public void onConnectionClosed(UUID connectionId) {
-        try {
-            ConnectionInfo connection = connectionManager.getConnection(connectionId);
-            if (connection == null) {
-                logger.warn("Received close notification for unknown connection: {}", connectionId);
-                return;
-            }
 
-            // Mark connection as closed
-            connectionManager.closeConnection(connectionId);
-
-            logger.info("Connection closed: {} - Total bytes: {}",
-                    connection.getDisplayName(), connection.getTotalBytes());
-
-        } catch (Exception e) {
-            logger.error("Error processing connection closure for {}: {}",
-                    connectionId, e.getMessage(), e);
-            errorHandlerService.handleError(e, ErrorCategory.CONNECTION_HANDLING);
+        ConnectionInfo connection = connectionManager.getConnection(connectionId);
+        if (connection == null) {
+            logger.warn("Received close notification for unknown connection: {}", connectionId);
+            return;
         }
+
+        // Mark connection as closed
+        connectionManager.closeConnection(connectionId);
+
+        logger.info("Connection closed: {} - Total bytes: {}",
+                connection.getDisplayName(), connection.getTotalBytes());
+
     }
 }

@@ -34,7 +34,7 @@ class ErrorClassifierTest {
     @Test
     void testDetermineSeverity_outOfMemoryError_isFatal() {
         OutOfMemoryError error = new OutOfMemoryError("No more memory");
-        ErrorSeverity severity = errorClassifier.determineSeverity(error, ErrorCategory.SYSTEM_RESOURCE);
+        ErrorSeverity severity = errorClassifier.determineSeverity(error, ErrorCategory.UNCAUGHT);
 
         assertEquals(ErrorSeverity.FATAL, severity);
     }
@@ -42,7 +42,7 @@ class ErrorClassifierTest {
     @Test
     void testDetermineSeverity_stackOverflowError_isFatal() {
         StackOverflowError error = new StackOverflowError();
-        ErrorSeverity severity = errorClassifier.determineSeverity(error, ErrorCategory.SYSTEM_RESOURCE);
+        ErrorSeverity severity = errorClassifier.determineSeverity(error, ErrorCategory.UNCAUGHT);
 
         assertEquals(ErrorSeverity.FATAL, severity);
     }
@@ -50,7 +50,7 @@ class ErrorClassifierTest {
     @Test
     void testDetermineSeverity_threadDeath_isRecoverable() {
         ThreadDeath error = new ThreadDeath();
-        ErrorSeverity severity = errorClassifier.determineSeverity(error, ErrorCategory.SYSTEM_RESOURCE);
+        ErrorSeverity severity = errorClassifier.determineSeverity(error, ErrorCategory.UNCAUGHT);
 
         assertEquals(ErrorSeverity.RECOVERABLE, severity);
     }
@@ -59,30 +59,6 @@ class ErrorClassifierTest {
     void testDetermineSeverity_initialization_isFatal() {
         RuntimeException exception = new RuntimeException("Init failed");
         ErrorSeverity severity = errorClassifier.determineSeverity(exception, ErrorCategory.INITIALIZATION);
-
-        assertEquals(ErrorSeverity.FATAL, severity);
-    }
-
-    @Test
-    void testDetermineSeverity_bindException_isFatal() {
-        BindException exception = new BindException("Address already in use");
-        ErrorSeverity severity = errorClassifier.determineSeverity(exception, ErrorCategory.PROXY_SERVER);
-
-        assertEquals(ErrorSeverity.FATAL, severity);
-    }
-
-    @Test
-    void testDetermineSeverity_addressAlreadyInUse_isFatal() {
-        IOException exception = new IOException("Address already in use");
-        ErrorSeverity severity = errorClassifier.determineSeverity(exception, ErrorCategory.PROXY_SERVER);
-
-        assertEquals(ErrorSeverity.FATAL, severity);
-    }
-
-    @Test
-    void testDetermineSeverity_permissionDenied_isFatal() {
-        IOException exception = new IOException("Permission denied");
-        ErrorSeverity severity = errorClassifier.determineSeverity(exception, ErrorCategory.PROXY_SERVER);
 
         assertEquals(ErrorSeverity.FATAL, severity);
     }
@@ -116,13 +92,13 @@ class ErrorClassifierTest {
         RuntimeException exception = new RuntimeException("UI error");
         ErrorSeverity severity = errorClassifier.determineSeverity(exception, ErrorCategory.UI_OPERATION);
 
-        assertEquals(ErrorSeverity.RECOVERABLE, severity);
+        assertEquals(ErrorSeverity.FATAL, severity);
     }
 
     @Test
     void testDetermineSeverity_systemResource_isFatal() {
         RuntimeException exception = new RuntimeException("Resource error");
-        ErrorSeverity severity = errorClassifier.determineSeverity(exception, ErrorCategory.SYSTEM_RESOURCE);
+        ErrorSeverity severity = errorClassifier.determineSeverity(exception, ErrorCategory.UNCAUGHT);
 
         assertEquals(ErrorSeverity.FATAL, severity);
     }
@@ -130,7 +106,7 @@ class ErrorClassifierTest {
     @Test
     void testGenerateUserMessage_outOfMemoryError() {
         OutOfMemoryError error = new OutOfMemoryError();
-        String message = errorClassifier.generateUserMessage(error, ErrorCategory.SYSTEM_RESOURCE);
+        String message = errorClassifier.generateUserMessage(error, ErrorCategory.UNCAUGHT);
 
         assertTrue(message.contains("run out of memory"));
         assertTrue(message.contains("restart"));
@@ -139,7 +115,7 @@ class ErrorClassifierTest {
     @Test
     void testGenerateUserMessage_stackOverflowError() {
         StackOverflowError error = new StackOverflowError();
-        String message = errorClassifier.generateUserMessage(error, ErrorCategory.SYSTEM_RESOURCE);
+        String message = errorClassifier.generateUserMessage(error, ErrorCategory.UNCAUGHT);
 
         assertTrue(message.contains("stack overflow"));
     }

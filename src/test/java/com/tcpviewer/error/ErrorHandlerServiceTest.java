@@ -71,7 +71,7 @@ class ErrorHandlerServiceTest {
     void testHandleError_recoverableError_doesNotShutdown() {
         IOException exception = new IOException("Connection failed");
 
-        errorHandlerService.handleError(exception, ErrorCategory.CONNECTION_HANDLING);
+        errorHandlerService.handleExpectedException(exception, ErrorCategory.CONNECTION_HANDLING);
 
         // Verify classification happened
         assertEquals(1, errorClassifier.classifyCallCount);
@@ -88,12 +88,12 @@ class ErrorHandlerServiceTest {
     void testHandleError_fatalError_triggersShutdown() {
         OutOfMemoryError error = new OutOfMemoryError("Out of memory");
 
-        errorHandlerService.handleError(error, ErrorCategory.SYSTEM_RESOURCE);
+        errorHandlerService.handleUncaughtException(Thread.currentThread(), error);
 
         // Verify classification happened
         assertEquals(1, errorClassifier.classifyCallCount);
         assertSame(error, errorClassifier.lastThrowable);
-        assertEquals(ErrorCategory.SYSTEM_RESOURCE, errorClassifier.lastCategory);
+        assertEquals(ErrorCategory.UNCAUGHT, errorClassifier.lastCategory);
 
         // Verify dialog was shown
         assertEquals(1, errorDialogService.showDialogCallCount);
@@ -103,7 +103,7 @@ class ErrorHandlerServiceTest {
 
     @Test
     void testHandleError_withNullThrowable_logsAndReturns() {
-        errorHandlerService.handleError(null, ErrorCategory.NETWORK_IO);
+        errorHandlerService.handleExpectedException(null, ErrorCategory.NETWORK_IO);
 
         // Should not call classifier or dialog service
         assertEquals(0, errorClassifier.classifyCallCount);
@@ -114,116 +114,28 @@ class ErrorHandlerServiceTest {
     void testHandleError_withNullCategory_logsAndReturns() {
         IOException exception = new IOException("Test");
 
-        errorHandlerService.handleError(exception, null);
+        errorHandlerService.handleExpectedException(exception, null);
 
         // Should not call classifier or dialog service
         assertEquals(0, errorClassifier.classifyCallCount);
         assertEquals(0, errorDialogService.showDialogCallCount);
     }
 
-    @Test
-    void testHandleError_withErrorContext_recoverableError() {
-        IOException exception = new IOException("Data error");
-        ErrorContext errorContext = ErrorContext.builder()
-                .throwable(exception)
-                .category(ErrorCategory.DATA_PROCESSING)
-                .severity(ErrorSeverity.RECOVERABLE)
-                .userMessage("Data processing failed")
-                .technicalDetails("IOException: Data error")
-                .build();
-
-        errorHandlerService.handleError(errorContext);
-
-        // Verify dialog was shown
-        assertEquals(1, errorDialogService.showDialogCallCount);
-        assertSame(errorContext, errorDialogService.lastErrorContext);
-
-
-        // Classifier should not be called (context already classified)
-        assertEquals(0, errorClassifier.classifyCallCount);
-    }
 
     @Test
-    void testHandleError_withErrorContext_fatalError() {
-        RuntimeException exception = new RuntimeException("Init failed");
-        ErrorContext errorContext = ErrorContext.builder()
-                .throwable(exception)
-                .category(ErrorCategory.INITIALIZATION)
-                .severity(ErrorSeverity.FATAL)
-                .userMessage("Initialization failed")
-                .technicalDetails("RuntimeException: Init failed")
-                .build();
-
-        errorHandlerService.handleError(errorContext);
-
-        // Verify dialog was shown
-        assertEquals(1, errorDialogService.showDialogCallCount);
-        assertSame(errorContext, errorDialogService.lastErrorContext);
-
-
-
-        // Classifier should not be called
-        assertEquals(0, errorClassifier.classifyCallCount);
-    }
-
-    @Test
-    void testHandleError_withNullErrorContext_logsAndReturns() {
-        errorHandlerService.handleError((ErrorContext) null);
-
-        assertEquals(0, errorClassifier.classifyCallCount);
-        assertEquals(0, errorDialogService.showDialogCallCount);
-    }
-
-    @Test
-    void testHandleUncaughtException_fromUIThread() {
-        Thread thread = new Thread("JavaFX Application Thread");
-        RuntimeException exception = new RuntimeException("UI error");
+    void testHandleUncaughtException() {
+        Thread thread = new Thread("Some Thread");
+        RuntimeException exception = new RuntimeException("Some uncaught error");
 
         errorHandlerService.handleUncaughtException(thread, exception);
 
         // Verify classification with UI_OPERATION category
         assertEquals(1, errorClassifier.classifyCallCount);
         assertSame(exception, errorClassifier.lastThrowable);
-        assertEquals(ErrorCategory.UI_OPERATION, errorClassifier.lastCategory);
+        assertEquals(ErrorCategory.UNCAUGHT, errorClassifier.lastCategory);
 
         // Verify dialog was shown
         assertEquals(1, errorDialogService.showDialogCallCount);
-    }
-
-    @Test
-    void testHandleUncaughtException_fromProxyThread() {
-        Thread thread = new Thread("proxy-server-thread");
-        IOException exception = new IOException("Proxy error");
-
-        errorHandlerService.handleUncaughtException(thread, exception);
-
-        // Verify classification with PROXY_SERVER category
-        assertEquals(1, errorClassifier.classifyCallCount);
-        assertEquals(ErrorCategory.PROXY_SERVER, errorClassifier.lastCategory);
-    }
-
-    @Test
-    void testHandleUncaughtException_fromConnectionThread() {
-        Thread thread = new Thread("connection-handler-1");
-        IOException exception = new IOException("Connection error");
-
-        errorHandlerService.handleUncaughtException(thread, exception);
-
-        // Verify classification with CONNECTION_HANDLING category
-        assertEquals(1, errorClassifier.classifyCallCount);
-        assertEquals(ErrorCategory.CONNECTION_HANDLING, errorClassifier.lastCategory);
-    }
-
-    @Test
-    void testHandleUncaughtException_fromUnknownThread() {
-        Thread thread = new Thread("some-random-thread");
-        RuntimeException exception = new RuntimeException("Unknown error");
-
-        errorHandlerService.handleUncaughtException(thread, exception);
-
-        // Verify classification with SYSTEM_RESOURCE category (default for unknown threads)
-        assertEquals(1, errorClassifier.classifyCallCount);
-        assertEquals(ErrorCategory.SYSTEM_RESOURCE, errorClassifier.lastCategory);
     }
 
     @Test
@@ -233,7 +145,7 @@ class ErrorHandlerServiceTest {
 
         // Should not propagate exception
         assertDoesNotThrow(() ->
-            errorHandlerService.handleError(exception, ErrorCategory.NETWORK_IO));
+            errorHandlerService.handleExpectedException(exception, ErrorCategory.NETWORK_IO));
 
         // Dialog service should have been called
         assertEquals(1, errorDialogService.showDialogCallCount);
@@ -250,5 +162,5 @@ class ErrorHandlerServiceTest {
         assertThrows(NullPointerException.class, () ->
             new ErrorHandlerService(errorClassifier, null));
     }
-    
+
 }

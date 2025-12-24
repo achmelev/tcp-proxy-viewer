@@ -55,7 +55,7 @@ public class StageInitializer implements ApplicationListener<JavaFxApplication.S
             logger.info("Application window initialized successfully");
         } catch (IOException e) {
             logger.error("Failed to load main view", e);
-            errorHandlerService.handleError(e, ErrorCategory.INITIALIZATION);
+            errorHandlerService.handleExpectedException(e, ErrorCategory.INITIALIZATION);
             // ErrorHandlerService will show dialog and shutdown the application
         }
     }

@@ -265,7 +265,7 @@ class ProxyServerTest {
         }
 
         @Override
-        public void handleError(Throwable throwable, com.tcpviewer.error.ErrorCategory category) {
+        public void handleExpectedException(Throwable throwable, com.tcpviewer.error.ErrorCategory category) {
             handleErrorCallCount++;
             // Don't call super to avoid triggering actual error handling in tests
         }
