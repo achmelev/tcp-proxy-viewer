@@ -20,6 +20,14 @@ public interface InputStreamWrapper extends AutoCloseable {
     int read(byte[] b) throws IOException;
 
     /**
+     * Returns an estimate of the number of bytes that can be read without blocking.
+     *
+     * @return the number of bytes available to read without blocking
+     * @throws IOException if an I/O error occurs
+     */
+    int available() throws IOException;
+
+    /**
      * Closes this input stream and releases any system resources associated with the stream.
      *
      * @throws IOException if an I/O error occurs

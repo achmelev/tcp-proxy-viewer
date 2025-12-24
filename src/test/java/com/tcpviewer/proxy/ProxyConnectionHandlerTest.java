@@ -104,6 +104,11 @@ class ProxyConnectionHandlerTest {
         }
 
         @Override
+        public int available() throws IOException {
+            return 0;
+        }
+
+        @Override
         public void close() throws IOException {
         }
     }

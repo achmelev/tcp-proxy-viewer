@@ -31,6 +31,11 @@ public class DefaultInputStreamWrapper implements InputStreamWrapper {
     }
 
     @Override
+    public int available() throws IOException {
+        return delegate.available();
+    }
+
+    @Override
     public void close() throws IOException {
         delegate.close();
     }
