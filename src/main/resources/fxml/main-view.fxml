@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.tcpviewer.ui.controller.MainController"
+            prefHeight="600.0" prefWidth="1000.0">
+
+    <!-- Menu Bar -->
+    <top>
+        <MenuBar>
+            <Menu text="File">
+                <MenuItem text="Start..." onAction="#onStartMenuClicked" fx:id="startMenuItem"/>
+                <MenuItem text="Stop" onAction="#onStopMenuClicked" fx:id="stopMenuItem" disable="true"/>
+                <SeparatorMenuItem/>
+                <MenuItem text="Exit" onAction="#onExitMenuClicked"/>
+            </Menu>
+            <Menu text="Help">
+                <MenuItem text="About" onAction="#onAboutMenuClicked"/>
+            </Menu>
+        </MenuBar>
+    </top>
+
+    <!-- Main Content -->
+    <center>
+        <SplitPane dividerPositions="0.3" fx:id="splitPane">
+            <!-- Left Pane: Connection List -->
+            <VBox>
+                <padding>
+                    <Insets top="10" right="10" bottom="10" left="10"/>
+                </padding>
+                <Label text="Connections" styleClass="pane-title">
+                    <padding>
+                        <Insets bottom="5"/>
+                    </padding>
+                </Label>
+                <ListView fx:id="connectionListView" VBox.vgrow="ALWAYS"/>
+            </VBox>
+
+            <!-- Right Pane: Data Display -->
+            <VBox>
+                <padding>
+                    <Insets top="10" right="10" bottom="10" left="10"/>
+                </padding>
+                <Label text="Data" styleClass="pane-title">
+                    <padding>
+                        <Insets bottom="5"/>
+                    </padding>
+                </Label>
+                <ListView fx:id="dataPacketListView" VBox.vgrow="ALWAYS"/>
+            </VBox>
+        </SplitPane>
+    </center>
+
+    <!-- Status Bar -->
+    <bottom>
+        <HBox styleClass="status-bar" spacing="10">
+            <padding>
+                <Insets top="5" right="10" bottom="5" left="10"/>
+            </padding>
+            <Label text="Status:" styleClass="status-label"/>
+            <Label fx:id="statusLabel" text="Idle" styleClass="status-text"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="connectionCountLabel" text="Connections: 0" styleClass="status-text"/>
+        </HBox>
+    </bottom>
+</BorderPane>

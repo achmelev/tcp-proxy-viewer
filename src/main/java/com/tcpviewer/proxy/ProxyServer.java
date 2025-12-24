@@ -1,0 +1,152 @@
+package com.tcpviewer.proxy;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+/**
+ * TCP proxy server that accepts client connections and forwards them to a target.
+ * Runs in a dedicated thread and notifies listeners of new connections.
+ */
+public class ProxyServer implements Runnable {
+
+    private static final Logger logger = LoggerFactory.getLogger(ProxyServer.class);
+
+    private final String localIp;
+    private final int localPort;
+    private final String targetHost;
+    private final int targetPort;
+    private final DataCaptureListener dataCaptureListener;
+    private final ConnectionAcceptedCallback connectionAcceptedCallback;
+    private final ExecutorService executorService;
+
+    private ServerSocket serverSocket;
+    private final AtomicBoolean running = new AtomicBoolean(false);
+
+    public ProxyServer(String localIp, int localPort, String targetHost, int targetPort,
+                       DataCaptureListener dataCaptureListener,
+                       ConnectionAcceptedCallback connectionAcceptedCallback,
+                       ExecutorService executorService) {
+        this.localIp = localIp;
+        this.localPort = localPort;
+        this.targetHost = targetHost;
+        this.targetPort = targetPort;
+        this.dataCaptureListener = dataCaptureListener;
+        this.connectionAcceptedCallback = connectionAcceptedCallback;
+        this.executorService = executorService;
+    }
+
+    @Override
+    public void run() {
+        try {
+            serverSocket = new ServerSocket();
+            serverSocket.setReuseAddress(true);
+            serverSocket.bind(new InetSocketAddress(localIp, localPort));
+            running.set(true);
+
+            logger.info("Proxy server started on {}:{}, forwarding to {}:{}",
+                       localIp, localPort, targetHost, targetPort);
+
+            while (running.get() && !Thread.currentThread().isInterrupted()) {
+                try {
+                    Socket clientSocket = serverSocket.accept();
+                    handleClientConnection(clientSocket);
+                } catch (SocketException e) {
+                    if (running.get()) {
+                        logger.error("Socket error in accept loop: {}", e.getMessage());
+                    }
+                    // If not running, this is expected during shutdown
+                    break;
+                } catch (IOException e) {
+                    logger.error("Error accepting connection: {}", e.getMessage());
+                }
+            }
+
+        } catch (IOException e) {
+            logger.error("Failed to start proxy server: {}", e.getMessage());
+            throw new RuntimeException("Failed to start proxy server", e);
+        } finally {
+            running.set(false);
+            closeServerSocket();
+            logger.info("Proxy server stopped");
+        }
+    }
+
+    /**
+     * Handles a new client connection.
+     */
+    private void handleClientConnection(Socket clientSocket) {
+        try {
+            UUID connectionId = UUID.randomUUID();
+            String clientAddress = clientSocket.getInetAddress().getHostAddress();
+            int clientPort = clientSocket.getPort();
+
+            logger.info("Accepted connection from {}:{} (ID: {})",
+                       clientAddress, clientPort, connectionId);
+
+            // Notify callback of new connection
+            if (connectionAcceptedCallback != null) {
+                connectionAcceptedCallback.onConnectionAccepted(connectionId, clientSocket);
+            }
+
+            // Create and submit connection handler
+            ProxyConnectionHandler handler = new ProxyConnectionHandler(
+                    clientSocket, targetHost, targetPort,
+                    dataCaptureListener, connectionId, executorService
+            );
+
+            executorService.submit(handler);
+
+        } catch (Exception e) {
+            logger.error("Error handling client connection: {}", e.getMessage());
+            closeSocket(clientSocket);
+        }
+    }
+
+    /**
+     * Stops the proxy server.
+     */
+    public void stop() {
+        logger.info("Stopping proxy server...");
+        running.set(false);
+        closeServerSocket();
+    }
+
+    /**
+     * Closes the server socket.
+     */
+    private void closeServerSocket() {
+        if (serverSocket != null && !serverSocket.isClosed()) {
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+                logger.warn("Error closing server socket: {}", e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Closes a client socket.
+     */
+    private void closeSocket(Socket socket) {
+        if (socket != null && !socket.isClosed()) {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                logger.trace("Error closing socket: {}", e.getMessage());
+            }
+        }
+    }
+
+    public boolean isRunning() {
+        return running.get();
+    }
+}

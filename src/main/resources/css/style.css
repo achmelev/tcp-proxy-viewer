@@ -1,0 +1,141 @@
+/* TCP Proxy Viewer Stylesheet */
+
+/* Root Styles */
+.root {
+    -fx-font-family: "System";
+    -fx-font-size: 13px;
+    -fx-background-color: #f4f4f4;
+}
+
+/* Pane Titles */
+.pane-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+}
+
+/* Status Bar */
+.status-bar {
+    -fx-background-color: #e8e8e8;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1px 0 0 0;
+}
+
+.status-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #666666;
+}
+
+.status-text {
+    -fx-text-fill: #333333;
+}
+
+/* List Views */
+.list-view {
+    -fx-background-color: white;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1px;
+    -fx-border-radius: 3px;
+}
+
+.list-cell {
+    -fx-padding: 8px;
+    -fx-background-color: white;
+}
+
+.list-cell:filled:selected {
+    -fx-background-color: #0078d7;
+    -fx-text-fill: white;
+}
+
+.list-cell:filled:hover {
+    -fx-background-color: #e5f3ff;
+}
+
+/* Dialog Styles */
+.dialog-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+}
+
+/* Buttons */
+.button {
+    -fx-background-color: #0078d7;
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-padding: 6px 16px;
+    -fx-background-radius: 3px;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #005a9e;
+}
+
+.button:pressed {
+    -fx-background-color: #004578;
+}
+
+/* Text Fields */
+.text-field {
+    -fx-background-color: white;
+    -fx-border-color: #cccccc;
+    -fx-border-radius: 3px;
+    -fx-padding: 6px 8px;
+}
+
+.text-field:focused {
+    -fx-border-color: #0078d7;
+    -fx-border-width: 2px;
+}
+
+/* Connection Info Styles */
+.connection-active {
+    -fx-text-fill: #008000;
+    -fx-font-weight: bold;
+}
+
+.connection-closed {
+    -fx-text-fill: #666666;
+}
+
+/* Data Packet Styles */
+.data-packet-client {
+    -fx-background-color: #e3f2fd;
+    -fx-padding: 8px;
+    -fx-background-radius: 8px;
+}
+
+.data-packet-server {
+    -fx-background-color: #f3e5f5;
+    -fx-padding: 8px;
+    -fx-background-radius: 8px;
+}
+
+.data-packet-timestamp {
+    -fx-font-size: 11px;
+    -fx-text-fill: #666666;
+}
+
+.data-packet-text {
+    -fx-font-family: "Monospaced";
+    -fx-font-size: 12px;
+}
+
+/* Menu Bar */
+.menu-bar {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 0 0 1px 0;
+}
+
+/* Split Pane */
+.split-pane {
+    -fx-background-color: #f4f4f4;
+}
+
+.split-pane-divider {
+    -fx-background-color: #cccccc;
+    -fx-padding: 0 1px 0 1px;
+}
