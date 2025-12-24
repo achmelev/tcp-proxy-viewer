@@ -4,7 +4,9 @@
       "Bash(xargs ls:*)",
       "Bash(mvn clean compile:*)",
       "Bash(mvn test:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(mvn clean test:*)",
+      "Bash(mvn test-compile:*)"
     ],
     "deny": [
       "Read(./.idea)"

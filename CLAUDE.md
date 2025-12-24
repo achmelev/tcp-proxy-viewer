@@ -100,6 +100,11 @@ This integration allows JavaFX controllers to be Spring beans with dependency in
 - `TextDetector`: Heuristic text vs binary detection
 - `HexDumpFormatter`: Formats binary data as hex dump
 
+**Error Handling** (`com.tcpviewer.error`):
+- `ErrorHandlerService`: Handles exceptions
+- `ErrorClassifier`: Heuristically classifies exceptions
+- `GlobalExceptionHandler`: Sets up global exception handlers
+
 ### Threading Model
 
 - Proxy server runs in dedicated thread managed by `ProxyServerManager`
