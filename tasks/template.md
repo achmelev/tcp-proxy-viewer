@@ -4,4 +4,4 @@
 
 **Text
 
-**Status (Open, Done)
+**Status (Open, Done, Canceled)
