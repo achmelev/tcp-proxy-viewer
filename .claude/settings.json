@@ -5,6 +5,9 @@
       "Bash(mvn clean compile:*)",
       "Bash(mvn test:*)",
       "Bash(grep:*)"
+    ],
+    "deny": [
+      "Read(./.idea)"
     ]
   }
 }
