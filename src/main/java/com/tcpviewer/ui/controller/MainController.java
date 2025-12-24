@@ -93,13 +93,10 @@ public class MainController {
                     setGraphic(null);
                 } else {
                     String direction = item.getDirection().toString();
-                    String preview = item.getDisplayText().length() > 50
-                            ? item.getDisplayText().substring(0, 50) + "..."
-                            : item.getDisplayText();
-                    setText(String.format("[%s] %s: %s",
+                    setText(String.format("[%s] %s:\n%s",
                             item.getTimestamp().toLocalTime(),
                             direction,
-                            preview.replace("\n", " ")));
+                            item.getDisplayText()));
                 }
             }
         });
