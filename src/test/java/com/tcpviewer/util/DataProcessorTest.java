@@ -12,20 +12,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for DataProcessor.
- * Uses REAL TextDetector and HexDumpFormatter instances (not mocks).
+ * Uses REAL TextFormatter instance (not mocks).
  */
 class DataProcessorTest {
 
     private DataProcessor dataProcessor;
-    private TextDetector textDetector;
-    private HexDumpFormatter hexDumpFormatter;
+    private TextFormatter textFormatter;
 
     @BeforeEach
     void setUp() {
         // Use real utility instances as per guideline
-        textDetector = new TextDetector();
-        hexDumpFormatter = new HexDumpFormatter();
-        dataProcessor = new DataProcessor(textDetector, hexDumpFormatter);
+        textFormatter = new TextFormatter();
+        dataProcessor = new DataProcessor(textFormatter);
     }
 
     @Test
@@ -49,9 +47,9 @@ class DataProcessorTest {
         DataPacket packet = dataProcessor.process(data, Direction.SERVER_TO_CLIENT);
 
         assertNotNull(packet);
-        assertEquals(DataType.BINARY, packet.getDataType());
-        // Should be formatted as hex dump
-        assertTrue(packet.getDisplayText().contains("0000:"));
+        assertEquals(DataType.TEXT, packet.getDataType());
+        // 0x00-0x02 are control characters (replaced with '?'), 0xFF is 'ÿ' in ISO-8859-1
+        assertEquals("???ÿ", packet.getDisplayText());
         assertEquals(Direction.SERVER_TO_CLIENT, packet.getDirection());
         assertArrayEquals(data, packet.getRawData());
     }
@@ -101,15 +99,14 @@ class DataProcessorTest {
 
     @Test
     void testProcessWithTypeBinary() {
-        // Text data but force BINARY type
+        // Text data but force BINARY type (which is now ignored)
         byte[] data = "Hello".getBytes();
 
         DataPacket packet = dataProcessor.processWithType(data, Direction.CLIENT_TO_SERVER, DataType.BINARY);
 
-        assertEquals(DataType.BINARY, packet.getDataType());
-        // Should be formatted as hex dump even though it's text
-        assertTrue(packet.getDisplayText().contains("0000:"));
-        assertTrue(packet.getDisplayText().contains("Hello")); // ASCII section
+        // BINARY type is deprecated and ignored - always returns TEXT
+        assertEquals(DataType.TEXT, packet.getDataType());
+        assertEquals("Hello", packet.getDisplayText());
     }
 
     @Test
@@ -136,7 +133,7 @@ class DataProcessorTest {
     void testIntegrationWithUtilities() {
         // End-to-end test with real utilities
 
-        // Test 1: Text data uses TextDetector.decodeText()
+        // Test 1: Text data uses TextFormatter.convertToDisplayText()
         String textInput = "Test message";
         byte[] textData = textInput.getBytes(StandardCharsets.UTF_8);
         DataPacket textPacket = dataProcessor.process(textData, Direction.CLIENT_TO_SERVER);
@@ -144,13 +141,12 @@ class DataProcessorTest {
         assertEquals(DataType.TEXT, textPacket.getDataType());
         assertEquals(textInput, textPacket.getDisplayText());
 
-        // Test 2: Binary data uses HexDumpFormatter.format()
+        // Test 2: Binary data also converted to text with control chars replaced
         byte[] binaryData = {0x00, 0x01, 0x02};
         DataPacket binaryPacket = dataProcessor.process(binaryData, Direction.SERVER_TO_CLIENT);
 
-        assertEquals(DataType.BINARY, binaryPacket.getDataType());
-        String hexOutput = hexDumpFormatter.format(binaryData);
-        assertEquals(hexOutput, binaryPacket.getDisplayText());
+        assertEquals(DataType.TEXT, binaryPacket.getDataType());
+        assertEquals("???", binaryPacket.getDisplayText());
     }
 
     @Test
@@ -172,5 +168,72 @@ class DataProcessorTest {
         assertThrows(NullPointerException.class,
                      () -> dataProcessor.process(null, Direction.CLIENT_TO_SERVER),
                      "Processing null data should throw NPE");
+    }
+
+    @Test
+    void testProcessControlCharactersReplaced() {
+        // Test C0 controls (excluding TAB, LF, CR)
+        byte[] data = {0x00, 0x01, 0x08, 0x0B, 0x0C, 0x0E, 0x1F, 0x7F};
+
+        DataPacket packet = dataProcessor.process(data, Direction.CLIENT_TO_SERVER);
+
+        assertEquals(DataType.TEXT, packet.getDataType());
+        assertEquals("????????", packet.getDisplayText());
+    }
+
+    @Test
+    void testProcessPreservesWhitespace() {
+        // TAB (0x09), LF (0x0A), CR (0x0D) should be preserved
+        byte[] data = {0x48, 0x09, 0x65, 0x0A, 0x6C, 0x0D, 0x6F}; // "H\te\nl\ro"
+
+        DataPacket packet = dataProcessor.process(data, Direction.CLIENT_TO_SERVER);
+
+        assertEquals(DataType.TEXT, packet.getDataType());
+        assertEquals("H\te\nl\ro", packet.getDisplayText());
+    }
+
+    @Test
+    void testProcessExtendedLatin1Characters() {
+        // Test extended Latin-1 range (0xA0-0xFF printable)
+        byte[] data = {(byte) 0xC4, (byte) 0xD6, (byte) 0xDC}; // Ä, Ö, Ü
+
+        DataPacket packet = dataProcessor.process(data, Direction.CLIENT_TO_SERVER);
+
+        assertEquals(DataType.TEXT, packet.getDataType());
+        assertEquals("ÄÖÜ", packet.getDisplayText());
+    }
+
+    @Test
+    void testProcessC1ControlCharactersReplaced() {
+        // C1 controls (0x80-0x9F) should be replaced
+        byte[] data = {(byte) 0x80, (byte) 0x85, (byte) 0x9F};
+
+        DataPacket packet = dataProcessor.process(data, Direction.CLIENT_TO_SERVER);
+
+        assertEquals(DataType.TEXT, packet.getDataType());
+        assertEquals("???", packet.getDisplayText());
+    }
+
+    @Test
+    void testProcessUsesISO88591Encoding() {
+        // Verify ISO-8859-1 encoding preserves byte values
+        byte[] data = {(byte) 0xE0, (byte) 0xE9, (byte) 0xFC}; // à, é, ü in ISO-8859-1
+
+        DataPacket packet = dataProcessor.process(data, Direction.CLIENT_TO_SERVER);
+
+        assertEquals(DataType.TEXT, packet.getDataType());
+        assertEquals("àéü", packet.getDisplayText());
+    }
+
+    @Test
+    void testProcessMixedContent() {
+        // Mix of printable, whitespace, and control characters
+        byte[] data = {0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x00, 0x09, 0x57, 0x6F, 0x72, 0x6C, 0x64};
+        // "Hello" + NULL + TAB + "World"
+
+        DataPacket packet = dataProcessor.process(data, Direction.CLIENT_TO_SERVER);
+
+        assertEquals(DataType.TEXT, packet.getDataType());
+        assertEquals("Hello?\tWorld", packet.getDisplayText());
     }
 }

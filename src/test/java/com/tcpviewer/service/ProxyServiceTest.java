@@ -191,7 +191,7 @@ class ProxyServiceTest {
         // Use test stubs for service classes and real instance for DataProcessor
         testServerManager = new TestProxyServerManager();
         testConnectionManager = new TestConnectionManager(testConnectionList);
-        realDataProcessor = new DataProcessor(new com.tcpviewer.util.TextDetector(), new com.tcpviewer.util.HexDumpFormatter());
+        realDataProcessor = new DataProcessor(new com.tcpviewer.util.TextFormatter());
 
         service = new ProxyService(testServerManager, testConnectionManager, realDataProcessor);
     }
