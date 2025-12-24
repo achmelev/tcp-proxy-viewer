@@ -128,19 +128,7 @@ class ProxyServiceTest {
         }
     }
 
-    /**
-     * Test stub for ApplicationShutdownService to avoid validation issues.
-     */
-    private static class TestApplicationShutdownService extends com.tcpviewer.error.ApplicationShutdownService {
-        public TestApplicationShutdownService() {
-            super(null, null, runnable -> runnable.run(), status -> {});
-        }
 
-        @Override
-        public void initiateGracefulShutdown(com.tcpviewer.error.ErrorContext errorContext) {
-            // Don't actually shut down in tests
-        }
-    }
 
     /**
      * Test stub for ErrorHandlerService.
@@ -153,8 +141,7 @@ class ProxyServiceTest {
         public TestErrorHandlerService() {
             super(
                 new com.tcpviewer.error.ErrorClassifier(),
-                new com.tcpviewer.error.ErrorDialogService(runnable -> runnable.run()),
-                new TestApplicationShutdownService()
+                new com.tcpviewer.error.ErrorDialogService(runnable -> runnable.run())
             );
         }
 

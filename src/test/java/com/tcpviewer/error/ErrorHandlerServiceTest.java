@@ -54,36 +54,17 @@ class ErrorHandlerServiceTest {
         }
     }
 
-    /**
-     * Test stub for ApplicationShutdownService.
-     */
-    private static class TestApplicationShutdownService extends ApplicationShutdownService {
-        public int shutdownCallCount = 0;
-        public ErrorContext lastErrorContext = null;
 
-        public TestApplicationShutdownService() {
-            super(null, null, runnable -> runnable.run(), status -> {});
-        }
-
-        @Override
-        public void initiateGracefulShutdown(ErrorContext errorContext) {
-            shutdownCallCount++;
-            lastErrorContext = errorContext;
-            // Don't actually shut down in tests
-        }
-    }
 
     private TestErrorClassifier errorClassifier;
     private TestErrorDialogService errorDialogService;
-    private TestApplicationShutdownService shutdownService;
     private ErrorHandlerService errorHandlerService;
 
     @BeforeEach
     void setUp() {
         errorClassifier = new TestErrorClassifier();
         errorDialogService = new TestErrorDialogService();
-        shutdownService = new TestApplicationShutdownService();
-        errorHandlerService = new ErrorHandlerService(errorClassifier, errorDialogService, shutdownService);
+        errorHandlerService = new ErrorHandlerService(errorClassifier, errorDialogService);
     }
 
     @Test
@@ -101,9 +82,6 @@ class ErrorHandlerServiceTest {
         assertEquals(1, errorDialogService.showDialogCallCount);
         assertNotNull(errorDialogService.lastErrorContext);
         assertEquals(ErrorSeverity.RECOVERABLE, errorDialogService.lastErrorContext.getSeverity());
-
-        // Verify NO shutdown was initiated
-        assertEquals(0, shutdownService.shutdownCallCount);
     }
 
     @Test
@@ -121,10 +99,6 @@ class ErrorHandlerServiceTest {
         assertEquals(1, errorDialogService.showDialogCallCount);
         assertNotNull(errorDialogService.lastErrorContext);
         assertEquals(ErrorSeverity.FATAL, errorDialogService.lastErrorContext.getSeverity());
-
-        // Verify shutdown WAS initiated
-        assertEquals(1, shutdownService.shutdownCallCount);
-        assertNotNull(shutdownService.lastErrorContext);
     }
 
     @Test
@@ -134,7 +108,6 @@ class ErrorHandlerServiceTest {
         // Should not call classifier or dialog service
         assertEquals(0, errorClassifier.classifyCallCount);
         assertEquals(0, errorDialogService.showDialogCallCount);
-        assertEquals(0, shutdownService.shutdownCallCount);
     }
 
     @Test
@@ -146,7 +119,6 @@ class ErrorHandlerServiceTest {
         // Should not call classifier or dialog service
         assertEquals(0, errorClassifier.classifyCallCount);
         assertEquals(0, errorDialogService.showDialogCallCount);
-        assertEquals(0, shutdownService.shutdownCallCount);
     }
 
     @Test
@@ -166,8 +138,6 @@ class ErrorHandlerServiceTest {
         assertEquals(1, errorDialogService.showDialogCallCount);
         assertSame(errorContext, errorDialogService.lastErrorContext);
 
-        // Verify NO shutdown
-        assertEquals(0, shutdownService.shutdownCallCount);
 
         // Classifier should not be called (context already classified)
         assertEquals(0, errorClassifier.classifyCallCount);
@@ -190,9 +160,7 @@ class ErrorHandlerServiceTest {
         assertEquals(1, errorDialogService.showDialogCallCount);
         assertSame(errorContext, errorDialogService.lastErrorContext);
 
-        // Verify shutdown WAS initiated
-        assertEquals(1, shutdownService.shutdownCallCount);
-        assertSame(errorContext, shutdownService.lastErrorContext);
+
 
         // Classifier should not be called
         assertEquals(0, errorClassifier.classifyCallCount);
@@ -204,7 +172,6 @@ class ErrorHandlerServiceTest {
 
         assertEquals(0, errorClassifier.classifyCallCount);
         assertEquals(0, errorDialogService.showDialogCallCount);
-        assertEquals(0, shutdownService.shutdownCallCount);
     }
 
     @Test
@@ -275,18 +242,13 @@ class ErrorHandlerServiceTest {
     @Test
     void testConstructor_requiresErrorClassifier() {
         assertThrows(NullPointerException.class, () ->
-            new ErrorHandlerService(null, errorDialogService, shutdownService));
+            new ErrorHandlerService(null, errorDialogService));
     }
 
     @Test
     void testConstructor_requiresErrorDialogService() {
         assertThrows(NullPointerException.class, () ->
-            new ErrorHandlerService(errorClassifier, null, shutdownService));
+            new ErrorHandlerService(errorClassifier, null));
     }
-
-    @Test
-    void testConstructor_requiresShutdownService() {
-        assertThrows(NullPointerException.class, () ->
-            new ErrorHandlerService(errorClassifier, errorDialogService, null));
-    }
+    
 }

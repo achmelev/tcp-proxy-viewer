@@ -187,8 +187,7 @@ class ProxyServerManagerTest {
 
         public TestErrorHandlerService() {
             super(new com.tcpviewer.error.ErrorClassifier(),
-                  new com.tcpviewer.error.ErrorDialogService(runnable -> runnable.run()),
-                  new com.tcpviewer.error.ApplicationShutdownService(null, null, runnable -> runnable.run(), status -> {}));
+                  new com.tcpviewer.error.ErrorDialogService(runnable -> runnable.run()));
         }
 
         @Override

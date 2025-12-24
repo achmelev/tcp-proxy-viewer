@@ -16,23 +16,17 @@ public class ErrorHandlerService {
 
     private final ErrorClassifier errorClassifier;
     private final ErrorDialogService errorDialogService;
-    private final ApplicationShutdownService shutdownService;
 
     public ErrorHandlerService(ErrorClassifier errorClassifier,
-                              ErrorDialogService errorDialogService,
-                              ApplicationShutdownService shutdownService) {
+                              ErrorDialogService errorDialogService) {
         if (errorClassifier == null) {
             throw new NullPointerException("errorClassifier cannot be null");
         }
         if (errorDialogService == null) {
             throw new NullPointerException("errorDialogService cannot be null");
         }
-        if (shutdownService == null) {
-            throw new NullPointerException("shutdownService cannot be null");
-        }
         this.errorClassifier = errorClassifier;
         this.errorDialogService = errorDialogService;
-        this.shutdownService = shutdownService;
     }
 
     /**
@@ -59,11 +53,7 @@ public class ErrorHandlerService {
             // Show error dialog to user
             errorDialogService.showErrorDialog(errorContext);
 
-            // If fatal, initiate graceful shutdown
-            if (errorContext.getSeverity() == ErrorSeverity.FATAL) {
-                logger.error("Fatal error detected. Initiating application shutdown.");
-                shutdownService.initiateGracefulShutdown(errorContext);
-            }
+
 
         } catch (Exception e) {
             // Failsafe: If error handling itself fails, log to console
@@ -92,13 +82,6 @@ public class ErrorHandlerService {
 
             // Show error dialog to user
             errorDialogService.showErrorDialog(errorContext);
-
-            // If fatal, initiate graceful shutdown
-            if (errorContext.getSeverity() == ErrorSeverity.FATAL) {
-                logger.error("Fatal error detected. Initiating application shutdown.");
-                shutdownService.initiateGracefulShutdown(errorContext);
-            }
-
         } catch (Exception e) {
             // Failsafe: If error handling itself fails, log to console
             logger.error("CRITICAL: Error handler failed while processing error context", e);
