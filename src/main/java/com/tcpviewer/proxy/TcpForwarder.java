@@ -85,7 +85,9 @@ public class TcpForwarder implements Runnable {
                             try {
                                 Thread.sleep(DRAIN_TIMEOUT_MS);
                             } catch (InterruptedException e) {
-                                //ignore
+                                logger.debug("{} interrupted during drain", name);
+                                Thread.currentThread().interrupt(); // Restore interrupt flag
+                                break; // Exit drain loop
                             }
                             available = getAvailableBytes();
                             //if avalable == 0 after wait, mark  the pipe drained

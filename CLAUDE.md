@@ -22,7 +22,7 @@ TCP Proxy Viewer is a desktop application that intercepts TCP connections and di
 mvn clean compile
 
 # Run tests
-mvn test
+mvn clean test
 
 # Package the application (creates JAR in target/)
 mvn clean package
@@ -46,6 +46,7 @@ mvn javafx:run
   * Place unit test classes in the same package as  the the tested class
   * Unit test class should only test the function of one class. So use mocks for the referenced classes.
   * Only implement mocks for the classes from the codebase. If the class to test uses some class from the JDK or an external library, implement a wrapper.
+  * Use test stubs instead of Mockito mocks (JDK 25 compatibility issue)
 
 ## Architecture Overview
 

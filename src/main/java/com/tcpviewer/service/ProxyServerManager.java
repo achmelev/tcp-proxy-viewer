@@ -1,5 +1,6 @@
 package com.tcpviewer.service;
 
+import com.tcpviewer.error.ErrorHandlerService;
 import com.tcpviewer.io.wrapper.factory.ServerSocketFactory;
 import com.tcpviewer.io.wrapper.factory.SocketFactory;
 import com.tcpviewer.lang.wrapper.ExecutorServiceWrapper;
@@ -33,6 +34,7 @@ public class ProxyServerManager {
     private final ServerSocketFactory serverSocketFactory;
     private final ThreadFactory threadFactory;
     private final ExecutorServiceFactory executorServiceFactory;
+    private final ErrorHandlerService errorHandlerService;
 
     private ProxyServer currentServer;
     private ThreadWrapper serverThread;
@@ -42,12 +44,14 @@ public class ProxyServerManager {
                               SocketFactory socketFactory,
                               ServerSocketFactory serverSocketFactory,
                               ThreadFactory threadFactory,
-                              ExecutorServiceFactory executorServiceFactory) {
+                              ExecutorServiceFactory executorServiceFactory,
+                              ErrorHandlerService errorHandlerService) {
         this.proxyExecutor = proxyExecutor;
         this.socketFactory = socketFactory;
         this.serverSocketFactory = serverSocketFactory;
         this.threadFactory = threadFactory;
         this.executorServiceFactory = executorServiceFactory;
+        this.errorHandlerService = errorHandlerService;
     }
 
     /**
@@ -79,7 +83,8 @@ public class ProxyServerManager {
                 connectionExecutor,
                 socketFactory,
                 serverSocketFactory,
-                threadFactory
+                threadFactory,
+                errorHandlerService
         );
 
         serverThread = threadFactory.createThread(currentServer, "ProxyServer");

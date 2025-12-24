@@ -1,6 +1,8 @@
 package com.tcpviewer.ui;
 
 import com.tcpviewer.config.JavaFxConfig;
+import com.tcpviewer.error.ErrorCategory;
+import com.tcpviewer.error.ErrorHandlerService;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -24,9 +26,11 @@ public class StageInitializer implements ApplicationListener<JavaFxApplication.S
     private static final String STYLESHEET = "/css/style.css";
 
     private final JavaFxConfig javaFxConfig;
+    private final ErrorHandlerService errorHandlerService;
 
-    public StageInitializer(JavaFxConfig javaFxConfig) {
+    public StageInitializer(JavaFxConfig javaFxConfig, ErrorHandlerService errorHandlerService) {
         this.javaFxConfig = javaFxConfig;
+        this.errorHandlerService = errorHandlerService;
     }
 
     @Override
@@ -51,7 +55,8 @@ public class StageInitializer implements ApplicationListener<JavaFxApplication.S
             logger.info("Application window initialized successfully");
         } catch (IOException e) {
             logger.error("Failed to load main view", e);
-            throw new RuntimeException("Failed to initialize application window", e);
+            errorHandlerService.handleError(e, ErrorCategory.INITIALIZATION);
+            // ErrorHandlerService will show dialog and shutdown the application
         }
     }
 }

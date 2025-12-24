@@ -1,5 +1,6 @@
 package com.tcpviewer.proxy;
 
+import com.tcpviewer.error.ErrorHandlerService;
 import com.tcpviewer.io.wrapper.InputStreamWrapper;
 import com.tcpviewer.io.wrapper.OutputStreamWrapper;
 import com.tcpviewer.io.wrapper.ServerSocketWrapper;
@@ -252,6 +253,26 @@ class ProxyServerTest {
     @Mock
     private ThreadFactory mockThreadFactory;
 
+    /**
+     * Test stub for ErrorHandlerService.
+     */
+    private static class TestErrorHandlerService extends ErrorHandlerService {
+        public int handleErrorCallCount = 0;
+
+        public TestErrorHandlerService() {
+            super(new com.tcpviewer.error.ErrorClassifier(),
+                  new com.tcpviewer.error.ErrorDialogService(runnable -> runnable.run()),
+                  new com.tcpviewer.error.ApplicationShutdownService(null, null, runnable -> runnable.run(), status -> {}));
+        }
+
+        @Override
+        public void handleError(Throwable throwable, com.tcpviewer.error.ErrorCategory category) {
+            handleErrorCallCount++;
+            // Don't call super to avoid triggering actual error handling in tests
+        }
+    }
+
+    private TestErrorHandlerService testErrorHandlerService;
     private TestServerSocketWrapper testServerSocket;
     private TestExecutorServiceWrapper testExecutor;
     private TestThreadWrapper testCurrentThread;
@@ -270,6 +291,7 @@ class ProxyServerTest {
         testServerSocket = new TestServerSocketWrapper();
         testExecutor = new TestExecutorServiceWrapper();
         testCurrentThread = new TestThreadWrapper();
+        testErrorHandlerService = new TestErrorHandlerService();
     }
 
     @Test
@@ -281,7 +303,7 @@ class ProxyServerTest {
         ProxyServer server = new ProxyServer(
                 localIp, localPort, targetHost, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
         );
 
         // Act
@@ -309,7 +331,7 @@ class ProxyServerTest {
         ProxyServer server = new ProxyServer(
                 localIp, localPort, targetHost, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
         );
 
         // Act
@@ -331,7 +353,7 @@ class ProxyServerTest {
         ProxyServer server = new ProxyServer(
                 localIp, localPort, targetHost, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
         );
 
         // Act
@@ -353,7 +375,7 @@ class ProxyServerTest {
         ProxyServer server = new ProxyServer(
                 localIp, localPort, targetHost, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
         );
 
         // Act
@@ -376,7 +398,7 @@ class ProxyServerTest {
         ProxyServer server = new ProxyServer(
                 localIp, localPort, targetHost, targetPort,
                 mockDataListener, null, // null callback
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
         );
 
         // Act & Assert - should not throw NPE
@@ -390,7 +412,7 @@ class ProxyServerTest {
         ProxyServer server = new ProxyServer(
                 localIp, localPort, targetHost, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
         );
 
         // Act - call stop before run (sets running to false)
@@ -411,7 +433,7 @@ class ProxyServerTest {
         ProxyServer server = new ProxyServer(
                 localIp, localPort, targetHost, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
         );
 
         // Act & Assert - should not throw, should exit gracefully
@@ -420,7 +442,7 @@ class ProxyServerTest {
     }
 
     @Test
-    void testIOExceptionDuringBindThrowsRuntimeException() throws Exception {
+    void testIOExceptionDuringBindLogsAndReturns() throws Exception {
         // Arrange
         testServerSocket.setBindException(new IOException("Address already in use"));
         when(mockServerSocketFactory.createServerSocket()).thenReturn(testServerSocket);
@@ -428,12 +450,13 @@ class ProxyServerTest {
         ProxyServer server = new ProxyServer(
                 localIp, localPort, targetHost, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
         );
 
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> server.run());
-        assertTrue(exception.getMessage().contains("Failed to start proxy server"));
+        // Act - Should not throw exception, just log and return
+        assertDoesNotThrow(() -> server.run());
+
+        // Assert - Server should not be running after bind failure
         assertFalse(server.isRunning());
     }
 
@@ -449,7 +472,7 @@ class ProxyServerTest {
         ProxyServer server = new ProxyServer(
                 localIp, localPort, targetHost, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
         );
 
         // Act
@@ -467,7 +490,7 @@ class ProxyServerTest {
         ProxyServer server = new ProxyServer(
                 localIp, localPort, targetHost, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
         );
 
         // Act
@@ -496,7 +519,7 @@ class ProxyServerTest {
         ProxyServer server = new ProxyServer(
                 localIp, localPort, targetHost, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
         );
 
         // Act
@@ -524,7 +547,7 @@ class ProxyServerTest {
         ProxyServer server = new ProxyServer(
                 localIp, localPort, targetHost, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
         );
 
         // Act

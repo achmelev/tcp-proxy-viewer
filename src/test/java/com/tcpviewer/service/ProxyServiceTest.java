@@ -1,5 +1,7 @@
 package com.tcpviewer.service;
 
+import com.tcpviewer.error.ErrorCategory;
+import com.tcpviewer.error.ErrorHandlerService;
 import com.tcpviewer.io.wrapper.InputStreamWrapper;
 import com.tcpviewer.io.wrapper.OutputStreamWrapper;
 import com.tcpviewer.io.wrapper.SocketWrapper;
@@ -37,7 +39,7 @@ class ProxyServiceTest {
         public boolean isRunning = false;
 
         public TestProxyServerManager() {
-            super(null, null, null, null, null);
+            super(null, null, null, null, null, null);
         }
 
         @Override
@@ -127,6 +129,45 @@ class ProxyServiceTest {
     }
 
     /**
+     * Test stub for ApplicationShutdownService to avoid validation issues.
+     */
+    private static class TestApplicationShutdownService extends com.tcpviewer.error.ApplicationShutdownService {
+        public TestApplicationShutdownService() {
+            super(null, null, runnable -> runnable.run(), status -> {});
+        }
+
+        @Override
+        public void initiateGracefulShutdown(com.tcpviewer.error.ErrorContext errorContext) {
+            // Don't actually shut down in tests
+        }
+    }
+
+    /**
+     * Test stub for ErrorHandlerService.
+     */
+    private static class TestErrorHandlerService extends ErrorHandlerService {
+        public int handleErrorCallCount = 0;
+        public Throwable lastThrowable = null;
+        public ErrorCategory lastCategory = null;
+
+        public TestErrorHandlerService() {
+            super(
+                new com.tcpviewer.error.ErrorClassifier(),
+                new com.tcpviewer.error.ErrorDialogService(runnable -> runnable.run()),
+                new TestApplicationShutdownService()
+            );
+        }
+
+        @Override
+        public void handleError(Throwable throwable, ErrorCategory category) {
+            handleErrorCallCount++;
+            lastThrowable = throwable;
+            lastCategory = category;
+            // Don't call super to avoid triggering actual error handling
+        }
+    }
+
+    /**
      * Test stub for SocketWrapper.
      */
     private static class TestSocketWrapper implements SocketWrapper {
@@ -179,6 +220,7 @@ class ProxyServiceTest {
     private TestProxyServerManager testServerManager;
     private TestConnectionManager testConnectionManager;
     private DataProcessor realDataProcessor;
+    private TestErrorHandlerService testErrorHandlerService;
     private ProxyService service;
     private ProxySession testSession;
     private ObservableList<ConnectionInfo> testConnectionList;
@@ -192,8 +234,9 @@ class ProxyServiceTest {
         testServerManager = new TestProxyServerManager();
         testConnectionManager = new TestConnectionManager(testConnectionList);
         realDataProcessor = new DataProcessor(new com.tcpviewer.util.TextFormatter());
+        testErrorHandlerService = new TestErrorHandlerService();
 
-        service = new ProxyService(testServerManager, testConnectionManager, realDataProcessor);
+        service = new ProxyService(testServerManager, testConnectionManager, realDataProcessor, testErrorHandlerService);
     }
 
     @Test

@@ -1,5 +1,7 @@
 package com.tcpviewer.service;
 
+import com.tcpviewer.error.ErrorCategory;
+import com.tcpviewer.error.ErrorHandlerService;
 import com.tcpviewer.io.wrapper.SocketWrapper;
 import com.tcpviewer.model.ConnectionInfo;
 import com.tcpviewer.model.DataPacket;
@@ -26,15 +28,18 @@ public class ProxyService implements DataCaptureListener {
     private final ProxyServerManager serverManager;
     private final ConnectionManager connectionManager;
     private final DataProcessor dataProcessor;
+    private final ErrorHandlerService errorHandlerService;
 
     private ProxySession currentSession;
 
     public ProxyService(ProxyServerManager serverManager,
                        ConnectionManager connectionManager,
-                       DataProcessor dataProcessor) {
+                       DataProcessor dataProcessor,
+                       ErrorHandlerService errorHandlerService) {
         this.serverManager = serverManager;
         this.connectionManager = connectionManager;
         this.dataProcessor = dataProcessor;
+        this.errorHandlerService = errorHandlerService;
     }
 
     /**
@@ -154,6 +159,7 @@ public class ProxyService implements DataCaptureListener {
         } catch (Exception e) {
             logger.error("Error processing captured data for connection {}: {}",
                     connectionId, e.getMessage(), e);
+            errorHandlerService.handleError(e, ErrorCategory.DATA_PROCESSING);
         }
     }
 
@@ -179,6 +185,7 @@ public class ProxyService implements DataCaptureListener {
         } catch (Exception e) {
             logger.error("Error processing connection closure for {}: {}",
                     connectionId, e.getMessage(), e);
+            errorHandlerService.handleError(e, ErrorCategory.CONNECTION_HANDLING);
         }
     }
 }

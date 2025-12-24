@@ -1,6 +1,8 @@
 package com.tcpviewer.ui.controller;
 
 import com.tcpviewer.config.JavaFxConfig;
+import com.tcpviewer.error.ErrorCategory;
+import com.tcpviewer.error.ErrorHandlerService;
 import com.tcpviewer.model.ConnectionInfo;
 import com.tcpviewer.model.DataPacket;
 import com.tcpviewer.model.ProxySession;
@@ -29,6 +31,7 @@ public class MainController {
 
     private final ProxyService proxyService;
     private final JavaFxConfig javaFxConfig;
+    private final ErrorHandlerService errorHandlerService;
 
     @FXML
     private MenuItem startMenuItem;
@@ -51,9 +54,10 @@ public class MainController {
     @FXML
     private SplitPane splitPane;
 
-    public MainController(ProxyService proxyService, JavaFxConfig javaFxConfig) {
+    public MainController(ProxyService proxyService, JavaFxConfig javaFxConfig, ErrorHandlerService errorHandlerService) {
         this.proxyService = proxyService;
         this.javaFxConfig = javaFxConfig;
+        this.errorHandlerService = errorHandlerService;
     }
 
     /**
@@ -167,10 +171,10 @@ public class MainController {
             }
         } catch (IOException e) {
             logger.error("Failed to open start dialog", e);
-            showError("Failed to open start dialog: " + e.getMessage());
+            errorHandlerService.handleError(e, ErrorCategory.UI_OPERATION);
         } catch (Exception e) {
             logger.error("Failed to start proxy session", e);
-            showError("Failed to start proxy: " + e.getMessage());
+            errorHandlerService.handleError(e, ErrorCategory.PROXY_SERVER);
         }
     }
 
@@ -187,19 +191,8 @@ public class MainController {
             logger.info("Proxy session stopped");
         } catch (Exception e) {
             logger.error("Failed to stop proxy session", e);
-            showError("Failed to stop proxy: " + e.getMessage());
+            errorHandlerService.handleError(e, ErrorCategory.PROXY_SERVER);
         }
-    }
-
-    /**
-     * Shows an error dialog.
-     */
-    private void showError(String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
     }
 
     /**

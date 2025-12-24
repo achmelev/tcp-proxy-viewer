@@ -1,5 +1,7 @@
 package com.tcpviewer.proxy;
 
+import com.tcpviewer.error.ErrorCategory;
+import com.tcpviewer.error.ErrorHandlerService;
 import com.tcpviewer.io.wrapper.ServerSocketWrapper;
 import com.tcpviewer.io.wrapper.SocketWrapper;
 import com.tcpviewer.io.wrapper.factory.ServerSocketFactory;
@@ -33,6 +35,7 @@ public class ProxyServer implements Runnable {
     private final SocketFactory socketFactory;
     private final ServerSocketFactory serverSocketFactory;
     private final ThreadFactory threadFactory;
+    private final ErrorHandlerService errorHandlerService;
 
     private ServerSocketWrapper serverSocket;
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -43,7 +46,8 @@ public class ProxyServer implements Runnable {
                        ExecutorServiceWrapper executorService,
                        SocketFactory socketFactory,
                        ServerSocketFactory serverSocketFactory,
-                       ThreadFactory threadFactory) {
+                       ThreadFactory threadFactory,
+                       ErrorHandlerService errorHandlerService) {
         this.localIp = localIp;
         this.localPort = localPort;
         this.targetHost = targetHost;
@@ -54,6 +58,7 @@ public class ProxyServer implements Runnable {
         this.socketFactory = socketFactory;
         this.serverSocketFactory = serverSocketFactory;
         this.threadFactory = threadFactory;
+        this.errorHandlerService = errorHandlerService;
     }
 
     @Override
@@ -83,8 +88,12 @@ public class ProxyServer implements Runnable {
             }
 
         } catch (IOException e) {
-            logger.error("Failed to start proxy server: {}", e.getMessage());
-            throw new RuntimeException("Failed to start proxy server", e);
+            logger.error("Failed to start proxy server: {}", e.getMessage(), e);
+            // Server cannot start - this is a fatal error
+            if (errorHandlerService != null) {
+                errorHandlerService.handleError(e, ErrorCategory.PROXY_SERVER);
+            }
+            return;
         } finally {
             running.set(false);
             closeServerSocket();

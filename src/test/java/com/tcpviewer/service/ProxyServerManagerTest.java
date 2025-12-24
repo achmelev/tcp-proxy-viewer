@@ -1,5 +1,6 @@
 package com.tcpviewer.service;
 
+import com.tcpviewer.error.ErrorHandlerService;
 import com.tcpviewer.io.wrapper.factory.ServerSocketFactory;
 import com.tcpviewer.io.wrapper.factory.SocketFactory;
 import com.tcpviewer.lang.wrapper.ExecutorServiceWrapper;
@@ -178,6 +179,26 @@ class ProxyServerManagerTest {
     @Mock
     private ConnectionAcceptedCallback mockConnectionCallback;
 
+    /**
+     * Test stub for ErrorHandlerService.
+     */
+    private static class TestErrorHandlerService extends ErrorHandlerService {
+        public int handleErrorCallCount = 0;
+
+        public TestErrorHandlerService() {
+            super(new com.tcpviewer.error.ErrorClassifier(),
+                  new com.tcpviewer.error.ErrorDialogService(runnable -> runnable.run()),
+                  new com.tcpviewer.error.ApplicationShutdownService(null, null, runnable -> runnable.run(), status -> {}));
+        }
+
+        @Override
+        public void handleError(Throwable throwable, com.tcpviewer.error.ErrorCategory category) {
+            handleErrorCallCount++;
+            // Don't call super to avoid triggering actual error handling in tests
+        }
+    }
+
+    private TestErrorHandlerService testErrorHandlerService;
     private ProxyServerManager manager;
     private TestExecutorServiceWrapper testConnectionExecutor;
     private TestThreadWrapper testServerThread;
@@ -192,6 +213,7 @@ class ProxyServerManagerTest {
         testCurrentThread = new TestThreadWrapper("Current-Thread");
         testProxyExecutor = Runnable::run; // Simple executor that runs immediately
         testSession = new ProxySession("127.0.0.1", 8080, "example.com", 80);
+        testErrorHandlerService = new TestErrorHandlerService();
 
         // Configure factories (lenient to avoid UnnecessaryStubbingException for tests that don't start server)
         lenient().when(mockExecutorServiceFactory.createCachedThreadPool(mockThreadFactory))
@@ -205,7 +227,8 @@ class ProxyServerManagerTest {
                 mockSocketFactory,
                 mockServerSocketFactory,
                 mockThreadFactory,
-                mockExecutorServiceFactory
+                mockExecutorServiceFactory,
+                testErrorHandlerService
         );
     }
 
