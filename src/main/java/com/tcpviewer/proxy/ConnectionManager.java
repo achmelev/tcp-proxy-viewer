@@ -1,4 +1,4 @@
-package com.tcpviewer.service;
+package com.tcpviewer.proxy;
 
 import com.tcpviewer.io.wrapper.SocketWrapper;
 import com.tcpviewer.javafx.wrapper.PlatformWrapper;

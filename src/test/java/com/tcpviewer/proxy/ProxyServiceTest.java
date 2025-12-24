@@ -1,4 +1,4 @@
-package com.tcpviewer.service;
+package com.tcpviewer.proxy;
 
 import com.tcpviewer.error.ErrorCategory;
 import com.tcpviewer.error.ErrorHandlerService;
@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;

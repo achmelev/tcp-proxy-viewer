@@ -1,4 +1,4 @@
-package com.tcpviewer.service;
+package com.tcpviewer.proxy;
 
 import com.tcpviewer.error.ErrorHandlerService;
 import com.tcpviewer.io.wrapper.factory.ServerSocketFactory;
@@ -8,9 +8,6 @@ import com.tcpviewer.lang.wrapper.ThreadWrapper;
 import com.tcpviewer.lang.wrapper.factory.ExecutorServiceFactory;
 import com.tcpviewer.lang.wrapper.factory.ThreadFactory;
 import com.tcpviewer.model.ProxySession;
-import com.tcpviewer.proxy.ConnectionAcceptedCallback;
-import com.tcpviewer.proxy.DataCaptureListener;
-import com.tcpviewer.proxy.ProxyServer;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

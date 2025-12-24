@@ -1,4 +1,4 @@
-package com.tcpviewer.service;
+package com.tcpviewer.proxy;
 
 import com.tcpviewer.error.ErrorHandlerService;
 import com.tcpviewer.io.wrapper.factory.ServerSocketFactory;
@@ -8,8 +8,6 @@ import com.tcpviewer.lang.wrapper.ThreadWrapper;
 import com.tcpviewer.lang.wrapper.factory.ExecutorServiceFactory;
 import com.tcpviewer.lang.wrapper.factory.ThreadFactory;
 import com.tcpviewer.model.ProxySession;
-import com.tcpviewer.proxy.ConnectionAcceptedCallback;
-import com.tcpviewer.proxy.DataCaptureListener;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

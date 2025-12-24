@@ -1,13 +1,11 @@
-package com.tcpviewer.service;
+package com.tcpviewer.proxy;
 
-import com.tcpviewer.error.ErrorCategory;
 import com.tcpviewer.error.ErrorHandlerService;
 import com.tcpviewer.io.wrapper.SocketWrapper;
 import com.tcpviewer.model.ConnectionInfo;
 import com.tcpviewer.model.DataPacket;
 import com.tcpviewer.model.Direction;
 import com.tcpviewer.model.ProxySession;
-import com.tcpviewer.proxy.DataCaptureListener;
 import com.tcpviewer.util.DataProcessor;
 import javafx.collections.ObservableList;
 import org.slf4j.Logger;

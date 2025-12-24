@@ -6,7 +6,7 @@ import com.tcpviewer.error.ErrorHandlerService;
 import com.tcpviewer.model.ConnectionInfo;
 import com.tcpviewer.model.DataPacket;
 import com.tcpviewer.model.ProxySession;
-import com.tcpviewer.service.ProxyService;
+import com.tcpviewer.proxy.ProxyService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
