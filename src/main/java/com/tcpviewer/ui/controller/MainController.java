@@ -7,6 +7,7 @@ import com.tcpviewer.model.ConnectionInfo;
 import com.tcpviewer.model.DataPacket;
 import com.tcpviewer.model.ProxySession;
 import com.tcpviewer.proxy.ProxyService;
+import com.tcpviewer.ui.error.ErrorDialogService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -65,6 +66,7 @@ public class MainController {
      */
     @FXML
     public void initialize() {
+        this.errorHandlerService.getErrorDialogService().onStart(this);
         logger.info("MainController initialized");
 
         // Bind connection list to proxy service
@@ -193,8 +195,13 @@ public class MainController {
     @FXML
     private void onExitMenuClicked() {
         logger.info("Exit menu clicked");
+        doExit(0);
+    }
+
+    public void doExit(int returmCode) {
         Stage stage = (Stage) statusLabel.getScene().getWindow();
         stage.close();
+        System.exit(0);
     }
 
     /**

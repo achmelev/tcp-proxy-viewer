@@ -1,6 +1,9 @@
-package com.tcpviewer.error;
+package com.tcpviewer.ui.error;
 
+import com.tcpviewer.error.ErrorContext;
+import com.tcpviewer.error.ErrorSeverity;
 import com.tcpviewer.javafx.wrapper.PlatformWrapper;
+import com.tcpviewer.ui.controller.MainController;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
@@ -20,15 +23,20 @@ import java.time.format.DateTimeFormatter;
 public class ErrorDialogService {
 
     private static final DateTimeFormatter TIMESTAMP_FORMATTER =
-        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final PlatformWrapper platformWrapper;
+    private MainController mainController;
 
     public ErrorDialogService(PlatformWrapper platformWrapper) {
         if (platformWrapper == null) {
             throw new NullPointerException("platformWrapper cannot be null");
         }
         this.platformWrapper = platformWrapper;
+    }
+
+    public void onStart(MainController mainController) {
+        this.mainController = mainController;
     }
 
     /**
@@ -65,6 +73,7 @@ public class ErrorDialogService {
             alert.getButtonTypes().setAll(ButtonType.OK);
 
             alert.showAndWait();
+            mainController.doExit(1);
         });
     }
 

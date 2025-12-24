@@ -1,5 +1,6 @@
 package com.tcpviewer.error;
 
+import com.tcpviewer.ui.error.ErrorDialogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -108,5 +109,7 @@ public class ErrorHandlerService {
         }
     }
 
-
+    public ErrorDialogService getErrorDialogService() {
+        return errorDialogService;
+    }
 }

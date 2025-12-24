@@ -10,6 +10,7 @@ import com.tcpviewer.io.wrapper.factory.SocketFactory;
 import com.tcpviewer.lang.wrapper.ExecutorServiceWrapper;
 import com.tcpviewer.lang.wrapper.ThreadWrapper;
 import com.tcpviewer.lang.wrapper.factory.ThreadFactory;
+import com.tcpviewer.ui.error.ErrorDialogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -261,7 +262,7 @@ class ProxyServerTest {
 
         public TestErrorHandlerService() {
             super(new com.tcpviewer.error.ErrorClassifier(),
-                  new com.tcpviewer.error.ErrorDialogService(runnable -> runnable.run()));
+                  new ErrorDialogService(runnable -> runnable.run()));
         }
 
         @Override

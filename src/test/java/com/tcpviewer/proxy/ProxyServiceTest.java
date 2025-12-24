@@ -9,6 +9,7 @@ import com.tcpviewer.model.ConnectionInfo;
 import com.tcpviewer.model.DataPacket;
 import com.tcpviewer.model.Direction;
 import com.tcpviewer.model.ProxySession;
+import com.tcpviewer.ui.error.ErrorDialogService;
 import com.tcpviewer.util.DataProcessor;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -140,7 +141,7 @@ class ProxyServiceTest {
         public TestErrorHandlerService() {
             super(
                 new com.tcpviewer.error.ErrorClassifier(),
-                new com.tcpviewer.error.ErrorDialogService(runnable -> runnable.run())
+                new ErrorDialogService(runnable -> runnable.run())
             );
         }
 

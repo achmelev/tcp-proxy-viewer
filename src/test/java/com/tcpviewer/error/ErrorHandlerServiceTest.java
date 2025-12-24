@@ -1,5 +1,6 @@
 package com.tcpviewer.error;
 
+import com.tcpviewer.ui.error.ErrorDialogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

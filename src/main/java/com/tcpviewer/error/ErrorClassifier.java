@@ -99,8 +99,7 @@ public class ErrorClassifier {
         }
 
         // Check for BindException or port already in use
-        if (throwable instanceof BindException ||
-            (throwable.getMessage() != null &&
+        if ((throwable.getMessage() != null &&
              throwable.getMessage().contains("Address already in use"))) {
             return "Failed to start proxy server. The port is already in use by another application. " +
                    "Please choose a different port or stop the other application.";
