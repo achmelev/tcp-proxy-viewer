@@ -1,7 +1,15 @@
 package com.tcpviewer.config;
 
+import com.tcpviewer.io.wrapper.factory.DefaultServerSocketFactory;
 import com.tcpviewer.io.wrapper.factory.DefaultSocketFactory;
+import com.tcpviewer.io.wrapper.factory.ServerSocketFactory;
 import com.tcpviewer.io.wrapper.factory.SocketFactory;
+import com.tcpviewer.javafx.wrapper.PlatformWrapper;
+import com.tcpviewer.javafx.wrapper.impl.DefaultPlatformWrapper;
+import com.tcpviewer.lang.wrapper.factory.DefaultExecutorServiceFactory;
+import com.tcpviewer.lang.wrapper.factory.DefaultThreadFactory;
+import com.tcpviewer.lang.wrapper.factory.ExecutorServiceFactory;
+import com.tcpviewer.lang.wrapper.factory.ThreadFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -49,5 +57,41 @@ public class AppConfig {
     @Bean
     public SocketFactory socketFactory() {
         return new DefaultSocketFactory();
+    }
+
+    /**
+     * Thread factory for creating and managing thread wrappers.
+     * Provides mockable abstraction over JDK Thread for testability.
+     */
+    @Bean
+    public ThreadFactory threadFactory() {
+        return new DefaultThreadFactory();
+    }
+
+    /**
+     * Executor service factory for creating thread pool wrappers.
+     * Provides mockable abstraction over JDK ExecutorService for testability.
+     */
+    @Bean
+    public ExecutorServiceFactory executorServiceFactory(ThreadFactory threadFactory) {
+        return new DefaultExecutorServiceFactory();
+    }
+
+    /**
+     * Platform wrapper for JavaFX UI thread synchronization.
+     * Provides mockable abstraction over JavaFX Platform for testability.
+     */
+    @Bean
+    public PlatformWrapper platformWrapper() {
+        return new DefaultPlatformWrapper();
+    }
+
+    /**
+     * Server socket factory for creating and wrapping server sockets.
+     * Provides mockable abstraction over JDK ServerSocket for testability.
+     */
+    @Bean
+    public ServerSocketFactory serverSocketFactory(SocketFactory socketFactory) {
+        return new DefaultServerSocketFactory(socketFactory);
     }
 }

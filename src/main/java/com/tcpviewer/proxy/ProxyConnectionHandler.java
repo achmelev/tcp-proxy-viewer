@@ -2,13 +2,14 @@ package com.tcpviewer.proxy;
 
 import com.tcpviewer.io.wrapper.SocketWrapper;
 import com.tcpviewer.io.wrapper.factory.SocketFactory;
+import com.tcpviewer.lang.wrapper.ThreadWrapper;
+import com.tcpviewer.lang.wrapper.factory.ThreadFactory;
 import com.tcpviewer.model.Direction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
 
 /**
  * Handles a single TCP proxy connection.
@@ -23,19 +24,19 @@ public class ProxyConnectionHandler implements Runnable {
     private final int targetPort;
     private final DataCaptureListener listener;
     private final UUID connectionId;
-    private final ExecutorService executorService;
     private final SocketFactory socketFactory;
+    private final ThreadFactory threadFactory;
 
     public ProxyConnectionHandler(SocketWrapper clientSocket, String targetHost, int targetPort,
                                    DataCaptureListener listener, UUID connectionId,
-                                   ExecutorService executorService, SocketFactory socketFactory) {
+                                   SocketFactory socketFactory, ThreadFactory threadFactory) {
         this.clientSocket = clientSocket;
         this.targetHost = targetHost;
         this.targetPort = targetPort;
         this.listener = listener;
         this.connectionId = connectionId;
-        this.executorService = executorService;
         this.socketFactory = socketFactory;
+        this.threadFactory = threadFactory;
     }
 
     @Override
@@ -71,8 +72,8 @@ public class ProxyConnectionHandler implements Runnable {
             );
 
             // Start forwarding in both directions
-            Thread clientToTargetThread = new Thread(clientToTarget, "Forwarder-C2T-" + connectionId);
-            Thread targetToClientThread = new Thread(targetToClient, "Forwarder-T2C-" + connectionId);
+            ThreadWrapper clientToTargetThread = threadFactory.createThread(clientToTarget, "Forwarder-C2T-" + connectionId);
+            ThreadWrapper targetToClientThread = threadFactory.createThread(targetToClient, "Forwarder-T2C-" + connectionId);
 
             clientToTargetThread.start();
             targetToClientThread.start();
@@ -87,7 +88,7 @@ public class ProxyConnectionHandler implements Runnable {
             logger.error("Error handling connection {}: {}", connectionId, e.getMessage());
         } catch (InterruptedException e) {
             logger.warn("Connection handler interrupted for {}", connectionId);
-            Thread.currentThread().interrupt();
+            threadFactory.currentThread().interrupt();
         } finally {
             closeSocket(clientSocket);
             closeSocket(targetSocket);

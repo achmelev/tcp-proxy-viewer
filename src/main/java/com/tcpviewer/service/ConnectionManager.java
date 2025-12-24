@@ -1,9 +1,9 @@
 package com.tcpviewer.service;
 
 import com.tcpviewer.io.wrapper.SocketWrapper;
+import com.tcpviewer.javafx.wrapper.PlatformWrapper;
 import com.tcpviewer.model.ConnectionInfo;
 import com.tcpviewer.model.DataPacket;
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.slf4j.Logger;
@@ -22,8 +22,13 @@ public class ConnectionManager {
 
     private static final Logger logger = LoggerFactory.getLogger(ConnectionManager.class);
 
+    private final PlatformWrapper platformWrapper;
     private final ConcurrentHashMap<UUID, ConnectionInfo> connections = new ConcurrentHashMap<>();
     private final ObservableList<ConnectionInfo> connectionList = FXCollections.observableArrayList();
+
+    public ConnectionManager(PlatformWrapper platformWrapper) {
+        this.platformWrapper = platformWrapper;
+    }
 
     /**
      * Registers a new connection.
@@ -40,7 +45,7 @@ public class ConnectionManager {
         connections.put(connectionId, connectionInfo);
 
         // Update UI on JavaFX thread
-        Platform.runLater(() -> connectionList.add(connectionInfo));
+        platformWrapper.runLater(() -> connectionList.add(connectionInfo));
 
         logger.info("Registered connection: {}", connectionInfo.getDisplayName());
         return connectionInfo;
@@ -54,7 +59,7 @@ public class ConnectionManager {
         connections.put(connectionId, connectionInfo);
 
         // Update UI on JavaFX thread
-        Platform.runLater(() -> connectionList.add(connectionInfo));
+        platformWrapper.runLater(() -> connectionList.add(connectionInfo));
 
         logger.info("Registered connection: {}", connectionInfo.getDisplayName());
         return connectionInfo;
@@ -70,7 +75,7 @@ public class ConnectionManager {
         ConnectionInfo connection = connections.get(connectionId);
         if (connection != null) {
             // Update UI on JavaFX thread
-            Platform.runLater(() -> connection.addDataPacket(packet));
+            platformWrapper.runLater(() -> connection.addDataPacket(packet));
         } else {
             logger.warn("Attempted to add data to unknown connection: {}", connectionId);
         }
@@ -84,7 +89,7 @@ public class ConnectionManager {
     public void closeConnection(UUID connectionId) {
         ConnectionInfo connection = connections.get(connectionId);
         if (connection != null) {
-            Platform.runLater(() -> connection.setActive(false));
+            platformWrapper.runLater(() -> connection.setActive(false));
             logger.info("Connection closed: {}", connection.getDisplayName());
         }
     }
@@ -133,7 +138,7 @@ public class ConnectionManager {
      */
     public void clear() {
         connections.clear();
-        Platform.runLater(connectionList::clear);
+        platformWrapper.runLater(connectionList::clear);
         logger.info("All connections cleared");
     }
 }

@@ -1,16 +1,18 @@
 package com.tcpviewer.proxy;
 
+import com.tcpviewer.io.wrapper.ServerSocketWrapper;
 import com.tcpviewer.io.wrapper.SocketWrapper;
+import com.tcpviewer.io.wrapper.factory.ServerSocketFactory;
 import com.tcpviewer.io.wrapper.factory.SocketFactory;
+import com.tcpviewer.lang.wrapper.ExecutorServiceWrapper;
+import com.tcpviewer.lang.wrapper.factory.ThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.SocketException;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -27,16 +29,21 @@ public class ProxyServer implements Runnable {
     private final int targetPort;
     private final DataCaptureListener dataCaptureListener;
     private final ConnectionAcceptedCallback connectionAcceptedCallback;
-    private final ExecutorService executorService;
+    private final ExecutorServiceWrapper executorService;
     private final SocketFactory socketFactory;
+    private final ServerSocketFactory serverSocketFactory;
+    private final ThreadFactory threadFactory;
 
-    private ServerSocket serverSocket;
+    private ServerSocketWrapper serverSocket;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     public ProxyServer(String localIp, int localPort, String targetHost, int targetPort,
                        DataCaptureListener dataCaptureListener,
                        ConnectionAcceptedCallback connectionAcceptedCallback,
-                       ExecutorService executorService, SocketFactory socketFactory) {
+                       ExecutorServiceWrapper executorService,
+                       SocketFactory socketFactory,
+                       ServerSocketFactory serverSocketFactory,
+                       ThreadFactory threadFactory) {
         this.localIp = localIp;
         this.localPort = localPort;
         this.targetHost = targetHost;
@@ -45,12 +52,14 @@ public class ProxyServer implements Runnable {
         this.connectionAcceptedCallback = connectionAcceptedCallback;
         this.executorService = executorService;
         this.socketFactory = socketFactory;
+        this.serverSocketFactory = serverSocketFactory;
+        this.threadFactory = threadFactory;
     }
 
     @Override
     public void run() {
         try {
-            serverSocket = new ServerSocket();
+            serverSocket = serverSocketFactory.createServerSocket();
             serverSocket.setReuseAddress(true);
             serverSocket.bind(new InetSocketAddress(localIp, localPort));
             running.set(true);
@@ -58,9 +67,9 @@ public class ProxyServer implements Runnable {
             logger.info("Proxy server started on {}:{}, forwarding to {}:{}",
                        localIp, localPort, targetHost, targetPort);
 
-            while (running.get() && !Thread.currentThread().isInterrupted()) {
+            while (running.get() && !threadFactory.currentThread().isInterrupted()) {
                 try {
-                    SocketWrapper clientSocket = socketFactory.wrapSocket(serverSocket.accept());
+                    SocketWrapper clientSocket = serverSocket.accept();
                     handleClientConnection(clientSocket);
                 } catch (SocketException e) {
                     if (running.get()) {
@@ -103,7 +112,7 @@ public class ProxyServer implements Runnable {
             // Create and submit connection handler
             ProxyConnectionHandler handler = new ProxyConnectionHandler(
                     clientSocket, targetHost, targetPort,
-                    dataCaptureListener, connectionId, executorService, socketFactory
+                    dataCaptureListener, connectionId, socketFactory, threadFactory
             );
 
             executorService.submit(handler);

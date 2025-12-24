@@ -1,6 +1,11 @@
 package com.tcpviewer.service;
 
+import com.tcpviewer.io.wrapper.factory.ServerSocketFactory;
 import com.tcpviewer.io.wrapper.factory.SocketFactory;
+import com.tcpviewer.lang.wrapper.ExecutorServiceWrapper;
+import com.tcpviewer.lang.wrapper.ThreadWrapper;
+import com.tcpviewer.lang.wrapper.factory.ExecutorServiceFactory;
+import com.tcpviewer.lang.wrapper.factory.ThreadFactory;
 import com.tcpviewer.model.ProxySession;
 import com.tcpviewer.proxy.ConnectionAcceptedCallback;
 import com.tcpviewer.proxy.DataCaptureListener;
@@ -12,8 +17,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -27,15 +30,24 @@ public class ProxyServerManager {
 
     private final Executor proxyExecutor;
     private final SocketFactory socketFactory;
+    private final ServerSocketFactory serverSocketFactory;
+    private final ThreadFactory threadFactory;
+    private final ExecutorServiceFactory executorServiceFactory;
 
     private ProxyServer currentServer;
-    private Thread serverThread;
-    private ExecutorService connectionExecutor;
+    private ThreadWrapper serverThread;
+    private ExecutorServiceWrapper connectionExecutor;
 
     public ProxyServerManager(@Qualifier("proxyExecutor") Executor proxyExecutor,
-                              SocketFactory socketFactory) {
+                              SocketFactory socketFactory,
+                              ServerSocketFactory serverSocketFactory,
+                              ThreadFactory threadFactory,
+                              ExecutorServiceFactory executorServiceFactory) {
         this.proxyExecutor = proxyExecutor;
         this.socketFactory = socketFactory;
+        this.serverSocketFactory = serverSocketFactory;
+        this.threadFactory = threadFactory;
+        this.executorServiceFactory = executorServiceFactory;
     }
 
     /**
@@ -54,12 +66,7 @@ public class ProxyServerManager {
         }
 
         // Create dedicated executor for connection handlers
-        connectionExecutor = Executors.newCachedThreadPool(r -> {
-            Thread thread = new Thread(r);
-            thread.setDaemon(true);
-            thread.setName("ProxyConnection-" + thread.getId());
-            return thread;
-        });
+        connectionExecutor = executorServiceFactory.createCachedThreadPool(threadFactory);
 
         // Create and start proxy server
         currentServer = new ProxyServer(
@@ -70,10 +77,12 @@ public class ProxyServerManager {
                 dataCaptureListener,
                 connectionAcceptedCallback,
                 connectionExecutor,
-                socketFactory
+                socketFactory,
+                serverSocketFactory,
+                threadFactory
         );
 
-        serverThread = new Thread(currentServer, "ProxyServer");
+        serverThread = threadFactory.createThread(currentServer, "ProxyServer");
         serverThread.setDaemon(false);
         serverThread.start();
 
@@ -119,7 +128,7 @@ public class ProxyServerManager {
     /**
      * Gracefully shuts down an executor service.
      */
-    private void shutdownExecutor(ExecutorService executor) {
+    private void shutdownExecutor(ExecutorServiceWrapper executor) {
         executor.shutdown();
         try {
             if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
@@ -132,7 +141,7 @@ public class ProxyServerManager {
         } catch (InterruptedException e) {
             logger.warn("Interrupted while waiting for executor shutdown");
             executor.shutdownNow();
-            Thread.currentThread().interrupt();
+            threadFactory.currentThread().interrupt();
         }
     }
 
