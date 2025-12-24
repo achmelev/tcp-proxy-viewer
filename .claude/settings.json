@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mvn *)"
+      "Bash(xargs ls:*)",
+      "Bash(mvn:*)"
     ]
   }
 }
