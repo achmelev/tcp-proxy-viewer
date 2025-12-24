@@ -2,7 +2,7 @@
   "permissions": {
     "allow": [
       "Bash(xargs ls:*)",
-      "Bash(mvn:*)"
+      "Bash(mvn clean compile:*)"
     ]
   }
 }
