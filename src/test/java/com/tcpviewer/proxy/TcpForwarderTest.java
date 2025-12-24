@@ -244,6 +244,8 @@ class TcpForwarderTest {
         assertEquals(1, testSource.readCallCount);
         assertEquals(0, testDestination.writeCallCount);
         assertEquals(0, testDestination.flushCount);
+        assertTrue(testSource.wasClosed);
+        assertTrue(testDestination.wasClosed);
         verify(mockListener, never()).onDataCaptured(any(), any(), any());
     }
 
