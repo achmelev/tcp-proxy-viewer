@@ -4,6 +4,7 @@ import com.tcpviewer.io.wrapper.SocketWrapper;
 import com.tcpviewer.javafx.wrapper.PlatformWrapper;
 import com.tcpviewer.model.ConnectionInfo;
 import com.tcpviewer.model.DataPacket;
+import javafx.beans.Observable;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.slf4j.Logger;
@@ -24,7 +25,9 @@ public class ConnectionManager {
 
     private final PlatformWrapper platformWrapper;
     private final ConcurrentHashMap<UUID, ConnectionInfo> connections = new ConcurrentHashMap<>();
-    private final ObservableList<ConnectionInfo> connectionList = FXCollections.observableArrayList();
+    private final ObservableList<ConnectionInfo> connectionList = FXCollections.observableArrayList(
+            connection -> new Observable[] { connection.activeProperty(), connection.getDataPackets() }
+    );
 
     public ConnectionManager(PlatformWrapper platformWrapper) {
         this.platformWrapper = platformWrapper;

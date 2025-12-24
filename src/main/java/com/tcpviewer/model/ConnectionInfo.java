@@ -1,5 +1,7 @@
 package com.tcpviewer.model;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -16,7 +18,7 @@ public class ConnectionInfo {
     private final int clientPort;
     private final LocalDateTime connectedAt;
     private LocalDateTime disconnectedAt;
-    private boolean active;
+    private final SimpleBooleanProperty active;
     private final ObservableList<DataPacket> dataPackets;
 
     public ConnectionInfo(UUID connectionId, String clientAddress, int clientPort) {
@@ -24,7 +26,7 @@ public class ConnectionInfo {
         this.clientAddress = clientAddress;
         this.clientPort = clientPort;
         this.connectedAt = LocalDateTime.now();
-        this.active = true;
+        this.active = new SimpleBooleanProperty(true);
         this.dataPackets = FXCollections.observableArrayList();
     }
 
@@ -49,14 +51,18 @@ public class ConnectionInfo {
     }
 
     public boolean isActive() {
-        return active;
+        return active.get();
     }
 
     public void setActive(boolean active) {
-        this.active = active;
+        this.active.set(active);
         if (!active) {
             this.disconnectedAt = LocalDateTime.now();
         }
+    }
+
+    public BooleanProperty activeProperty() {
+        return active;
     }
 
     public ObservableList<DataPacket> getDataPackets() {
@@ -81,7 +87,7 @@ public class ConnectionInfo {
     public String toString() {
         return String.format("Connection[%s - %s - %s]",
                 getDisplayName(),
-                active ? "ACTIVE" : "CLOSED",
+                active.get() ? "ACTIVE" : "CLOSED",
                 connectedAt);
     }
 }
