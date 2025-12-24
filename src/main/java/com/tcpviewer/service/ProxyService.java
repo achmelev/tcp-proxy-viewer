@@ -1,5 +1,6 @@
 package com.tcpviewer.service;
 
+import com.tcpviewer.io.wrapper.SocketWrapper;
 import com.tcpviewer.model.ConnectionInfo;
 import com.tcpviewer.model.DataPacket;
 import com.tcpviewer.model.Direction;
@@ -11,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.net.Socket;
 import java.util.UUID;
 
 /**
@@ -122,7 +122,7 @@ public class ProxyService implements DataCaptureListener {
     /**
      * Callback when a new connection is accepted.
      */
-    private void onConnectionAccepted(UUID connectionId, Socket clientSocket) {
+    private void onConnectionAccepted(UUID connectionId, SocketWrapper clientSocket) {
         // Register connection with full socket information
         connectionManager.registerConnection(connectionId, clientSocket);
         logger.debug("Connection accepted and registered: {}", connectionId);

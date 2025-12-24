@@ -1,12 +1,12 @@
 package com.tcpviewer.proxy;
 
+import com.tcpviewer.io.wrapper.InputStreamWrapper;
+import com.tcpviewer.io.wrapper.OutputStreamWrapper;
 import com.tcpviewer.model.Direction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -19,14 +19,14 @@ public class TcpForwarder implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(TcpForwarder.class);
     private static final int BUFFER_SIZE = 8192;
 
-    private final InputStream source;
-    private final OutputStream destination;
+    private final InputStreamWrapper source;
+    private final OutputStreamWrapper destination;
     private final DataCaptureListener listener;
     private final UUID connectionId;
     private final Direction direction;
     private final String name;
 
-    public TcpForwarder(InputStream source, OutputStream destination,
+    public TcpForwarder(InputStreamWrapper source, OutputStreamWrapper destination,
                         DataCaptureListener listener, UUID connectionId,
                         Direction direction, String name) {
         this.source = source;

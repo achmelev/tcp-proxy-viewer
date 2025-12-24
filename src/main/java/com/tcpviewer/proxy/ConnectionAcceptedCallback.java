@@ -1,6 +1,7 @@
 package com.tcpviewer.proxy;
 
-import java.net.Socket;
+import com.tcpviewer.io.wrapper.SocketWrapper;
+
 import java.util.UUID;
 
 /**
@@ -15,5 +16,5 @@ public interface ConnectionAcceptedCallback {
      * @param connectionId   The unique connection identifier
      * @param clientSocket   The client socket
      */
-    void onConnectionAccepted(UUID connectionId, Socket clientSocket);
+    void onConnectionAccepted(UUID connectionId, SocketWrapper clientSocket);
 }

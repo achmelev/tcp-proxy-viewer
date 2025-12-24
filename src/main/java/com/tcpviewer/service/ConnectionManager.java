@@ -1,5 +1,6 @@
 package com.tcpviewer.service;
 
+import com.tcpviewer.io.wrapper.SocketWrapper;
 import com.tcpviewer.model.ConnectionInfo;
 import com.tcpviewer.model.DataPacket;
 import javafx.application.Platform;
@@ -9,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.net.Socket;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -32,7 +32,7 @@ public class ConnectionManager {
      * @param clientSocket   The client socket
      * @return The created ConnectionInfo object
      */
-    public ConnectionInfo registerConnection(UUID connectionId, Socket clientSocket) {
+    public ConnectionInfo registerConnection(UUID connectionId, SocketWrapper clientSocket) {
         String clientAddress = clientSocket.getInetAddress().getHostAddress();
         int clientPort = clientSocket.getPort();
 

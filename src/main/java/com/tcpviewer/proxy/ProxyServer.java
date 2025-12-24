@@ -1,12 +1,13 @@
 package com.tcpviewer.proxy;
 
+import com.tcpviewer.io.wrapper.SocketWrapper;
+import com.tcpviewer.io.wrapper.factory.SocketFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.SocketException;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -27,6 +28,7 @@ public class ProxyServer implements Runnable {
     private final DataCaptureListener dataCaptureListener;
     private final ConnectionAcceptedCallback connectionAcceptedCallback;
     private final ExecutorService executorService;
+    private final SocketFactory socketFactory;
 
     private ServerSocket serverSocket;
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -34,7 +36,7 @@ public class ProxyServer implements Runnable {
     public ProxyServer(String localIp, int localPort, String targetHost, int targetPort,
                        DataCaptureListener dataCaptureListener,
                        ConnectionAcceptedCallback connectionAcceptedCallback,
-                       ExecutorService executorService) {
+                       ExecutorService executorService, SocketFactory socketFactory) {
         this.localIp = localIp;
         this.localPort = localPort;
         this.targetHost = targetHost;
@@ -42,6 +44,7 @@ public class ProxyServer implements Runnable {
         this.dataCaptureListener = dataCaptureListener;
         this.connectionAcceptedCallback = connectionAcceptedCallback;
         this.executorService = executorService;
+        this.socketFactory = socketFactory;
     }
 
     @Override
@@ -57,7 +60,7 @@ public class ProxyServer implements Runnable {
 
             while (running.get() && !Thread.currentThread().isInterrupted()) {
                 try {
-                    Socket clientSocket = serverSocket.accept();
+                    SocketWrapper clientSocket = socketFactory.wrapSocket(serverSocket.accept());
                     handleClientConnection(clientSocket);
                 } catch (SocketException e) {
                     if (running.get()) {
@@ -83,7 +86,7 @@ public class ProxyServer implements Runnable {
     /**
      * Handles a new client connection.
      */
-    private void handleClientConnection(Socket clientSocket) {
+    private void handleClientConnection(SocketWrapper clientSocket) {
         try {
             UUID connectionId = UUID.randomUUID();
             String clientAddress = clientSocket.getInetAddress().getHostAddress();
@@ -100,7 +103,7 @@ public class ProxyServer implements Runnable {
             // Create and submit connection handler
             ProxyConnectionHandler handler = new ProxyConnectionHandler(
                     clientSocket, targetHost, targetPort,
-                    dataCaptureListener, connectionId, executorService
+                    dataCaptureListener, connectionId, executorService, socketFactory
             );
 
             executorService.submit(handler);
@@ -136,7 +139,7 @@ public class ProxyServer implements Runnable {
     /**
      * Closes a client socket.
      */
-    private void closeSocket(Socket socket) {
+    private void closeSocket(SocketWrapper socket) {
         if (socket != null && !socket.isClosed()) {
             try {
                 socket.close();

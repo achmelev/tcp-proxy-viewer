@@ -1,5 +1,7 @@
 package com.tcpviewer.config;
 
+import com.tcpviewer.io.wrapper.factory.DefaultSocketFactory;
+import com.tcpviewer.io.wrapper.factory.SocketFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,5 +40,14 @@ public class AppConfig {
         executor.setAwaitTerminationSeconds(30);
         executor.initialize();
         return executor;
+    }
+
+    /**
+     * Socket factory for creating and wrapping sockets.
+     * Provides mockable abstraction over JDK Socket classes for testability.
+     */
+    @Bean
+    public SocketFactory socketFactory() {
+        return new DefaultSocketFactory();
     }
 }

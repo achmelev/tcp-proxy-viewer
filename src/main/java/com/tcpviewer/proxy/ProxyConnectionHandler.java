@@ -1,11 +1,12 @@
 package com.tcpviewer.proxy;
 
+import com.tcpviewer.io.wrapper.SocketWrapper;
+import com.tcpviewer.io.wrapper.factory.SocketFactory;
 import com.tcpviewer.model.Direction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.Socket;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
@@ -17,33 +18,35 @@ public class ProxyConnectionHandler implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(ProxyConnectionHandler.class);
 
-    private final Socket clientSocket;
+    private final SocketWrapper clientSocket;
     private final String targetHost;
     private final int targetPort;
     private final DataCaptureListener listener;
     private final UUID connectionId;
     private final ExecutorService executorService;
+    private final SocketFactory socketFactory;
 
-    public ProxyConnectionHandler(Socket clientSocket, String targetHost, int targetPort,
+    public ProxyConnectionHandler(SocketWrapper clientSocket, String targetHost, int targetPort,
                                    DataCaptureListener listener, UUID connectionId,
-                                   ExecutorService executorService) {
+                                   ExecutorService executorService, SocketFactory socketFactory) {
         this.clientSocket = clientSocket;
         this.targetHost = targetHost;
         this.targetPort = targetPort;
         this.listener = listener;
         this.connectionId = connectionId;
         this.executorService = executorService;
+        this.socketFactory = socketFactory;
     }
 
     @Override
     public void run() {
-        Socket targetSocket = null;
+        SocketWrapper targetSocket = null;
         try {
             logger.info("Connecting to target {}:{} for connection {}",
                        targetHost, targetPort, connectionId);
 
             // Connect to target server
-            targetSocket = new Socket(targetHost, targetPort);
+            targetSocket = socketFactory.createSocket(targetHost, targetPort);
             targetSocket.setTcpNoDelay(true);
 
             logger.info("Connected to target for connection {}", connectionId);
@@ -105,7 +108,7 @@ public class ProxyConnectionHandler implements Runnable {
     /**
      * Closes a socket without throwing exceptions.
      */
-    private void closeSocket(Socket socket) {
+    private void closeSocket(SocketWrapper socket) {
         if (socket != null && !socket.isClosed()) {
             try {
                 socket.close();

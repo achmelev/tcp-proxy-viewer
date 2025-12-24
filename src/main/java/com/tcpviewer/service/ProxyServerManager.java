@@ -1,5 +1,6 @@
 package com.tcpviewer.service;
 
+import com.tcpviewer.io.wrapper.factory.SocketFactory;
 import com.tcpviewer.model.ProxySession;
 import com.tcpviewer.proxy.ConnectionAcceptedCallback;
 import com.tcpviewer.proxy.DataCaptureListener;
@@ -25,13 +26,16 @@ public class ProxyServerManager {
     private static final Logger logger = LoggerFactory.getLogger(ProxyServerManager.class);
 
     private final Executor proxyExecutor;
+    private final SocketFactory socketFactory;
 
     private ProxyServer currentServer;
     private Thread serverThread;
     private ExecutorService connectionExecutor;
 
-    public ProxyServerManager(@Qualifier("proxyExecutor") Executor proxyExecutor) {
+    public ProxyServerManager(@Qualifier("proxyExecutor") Executor proxyExecutor,
+                              SocketFactory socketFactory) {
         this.proxyExecutor = proxyExecutor;
+        this.socketFactory = socketFactory;
     }
 
     /**
@@ -65,7 +69,8 @@ public class ProxyServerManager {
                 session.getTargetPort(),
                 dataCaptureListener,
                 connectionAcceptedCallback,
-                connectionExecutor
+                connectionExecutor,
+                socketFactory
         );
 
         serverThread = new Thread(currentServer, "ProxyServer");
