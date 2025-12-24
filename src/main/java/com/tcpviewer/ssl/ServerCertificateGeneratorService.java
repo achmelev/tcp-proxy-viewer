@@ -9,6 +9,7 @@ import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.operator.*;
 import org.bouncycastle.operator.jcajce.*;
+import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -16,10 +17,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.security.*;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Date;
 
+@Service
 public class ServerCertificateGeneratorService {
 
     static {
@@ -103,7 +106,16 @@ public class ServerCertificateGeneratorService {
 
         serverCert.verify(caCertificate.getPublicKey());
 
-        return new GeneratedCertificate(serverCert, serverKeyPair.getPrivate());
+        // 1. Create an in-memory KeyStore
+        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        keyStore.load(null, null);
+        // 2. Store private key and certificate
+        char[] keyPassword = "changeit".toCharArray(); // required, even for in-memory keystore
+        Certificate[] chain = new Certificate[]{caCertificate};
+        keyStore.setKeyEntry("server", caPrivateKey, keyPassword, chain);
+
+
+        return new GeneratedCertificate(serverCert, serverKeyPair.getPrivate(), keyStore);
     }
 
     public X509Certificate getCaCertificate() {
@@ -148,6 +160,7 @@ public class ServerCertificateGeneratorService {
 
     public record GeneratedCertificate(
             X509Certificate certificate,
-            PrivateKey privateKey
+            PrivateKey privateKey,
+            KeyStore keyStore
     ) {}
 }

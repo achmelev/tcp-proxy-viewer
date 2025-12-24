@@ -15,6 +15,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.math.BigInteger;
 import java.security.*;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Date;
@@ -43,10 +44,18 @@ class CertificateCertificateGeneratorServiceTest {
 
         X509Certificate serverCert = result.certificate();
         PrivateKey serverKey = result.privateKey();
+        KeyStore keyStore = result.keyStore();
 
         // Assert: basic properties
         assertNotNull(serverCert);
         assertNotNull(serverKey);
+        assertNotNull(keyStore);
+
+        //Verify KeyStore
+        Certificate cert = keyStore.getCertificate("server");
+        Key key = keyStore.getKey("server", "changeit".toCharArray());
+        assertNotNull(cert);
+        assertNotNull(key);
 
         assertTrue(
                 serverCert.getIssuerX500Principal().getName().contains("CN=TCPViewer")
