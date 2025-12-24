@@ -33,6 +33,20 @@ mvn spring-boot:run
 mvn javafx:run
 ```
 
+##Unit Tests Guidelines
+
+*  Write unit tests for all new classes except for:  Model classes (package com.tcpviewer.model), UI classes (package com.tcpviewer.ui) and and wrapper classes (all **.wrapper packages)
+* Always extend unit tests when you change a class. 
+*  Always modify unit tests when the behaviour of a class changes.
+* Run unit tests after every change
+* When a unit test fails after a change, always verify at first, whether the reason is the change. Only change the test if you are absolutely sure the failure reason is in the test itself.
+* Follow the following guidelines, when writing unit test:
+  * Use Mockito as unit testing framework
+  * Write one unit test class for every application class
+  * Place unit test classes in the same package as  the the tested class
+  * Unit test class should only test the function of one class. So use mocks for the referenced classes.
+  * Only implement mocks for the classes from the codebase. If the class to test uses some class from the JDK or an external library, implement a wrapper.
+
 ## Architecture Overview
 
 ### Application Bootstrap
