@@ -41,6 +41,15 @@
         <TextField fx:id="targetPortField" promptText="e.g., 80"
                    GridPane.columnIndex="1" GridPane.rowIndex="3"/>
 
+        <!-- SSL -->
+        <Label text="Use SSL:" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+        <CheckBox fx:id="sslEnabled"  onAction="#onSSLCheckBoxClicked"
+                   GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+        <Label fx:id="sslHostLabel" text="SSL host name:" GridPane.columnIndex="0" GridPane.rowIndex="5" visible="false"/>
+        <TextField fx:id="sslHost" promptText="e.g., google.com"
+                   GridPane.columnIndex="1" GridPane.rowIndex="5" visible="false"/>
+
+
         <columnConstraints>
             <ColumnConstraints minWidth="100" prefWidth="100"/>
             <ColumnConstraints hgrow="ALWAYS"/>
