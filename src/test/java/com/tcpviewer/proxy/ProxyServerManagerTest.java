@@ -8,6 +8,7 @@ import com.tcpviewer.lang.wrapper.ThreadWrapper;
 import com.tcpviewer.lang.wrapper.factory.ExecutorServiceFactory;
 import com.tcpviewer.lang.wrapper.factory.ThreadFactory;
 import com.tcpviewer.model.ProxySession;
+import com.tcpviewer.ssl.ServerCertificateGeneratorService;
 import com.tcpviewer.ui.error.ErrorDialogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -210,7 +211,7 @@ class ProxyServerManagerTest {
         testServerThread = new TestThreadWrapper("ProxyServer");
         testCurrentThread = new TestThreadWrapper("Current-Thread");
         testProxyExecutor = Runnable::run; // Simple executor that runs immediately
-        testSession = new ProxySession("127.0.0.1", 8080, "example.com", 80);
+        testSession = new ProxySession("127.0.0.1", 8080, "example.com", 80, false, null);
         testErrorHandlerService = new TestErrorHandlerService();
 
         // Configure factories (lenient to avoid UnnecessaryStubbingException for tests that don't start server)
@@ -226,8 +227,11 @@ class ProxyServerManagerTest {
                 mockServerSocketFactory,
                 mockThreadFactory,
                 mockExecutorServiceFactory,
-                testErrorHandlerService
+                testErrorHandlerService,
+                new ServerCertificateGeneratorService()
         );
+
+
     }
 
     @Test
@@ -242,6 +246,25 @@ class ProxyServerManagerTest {
         assertFalse(testServerThread.isDaemon());
         assertTrue(testSession.isActive());
     }
+
+    @Test
+    void testStartServerCreatesAndStartsSSLProxyServer() {
+        ProxySession testSession = new ProxySession("127.0.0.1", 8080, "10.20.30.40", 80, true, "www.example.com");
+        // Act
+        manager.startServer(testSession, mockDataListener, mockConnectionCallback);
+
+        // Assert
+        verify(mockExecutorServiceFactory).createCachedThreadPool(mockThreadFactory);
+        verify(mockThreadFactory).createThread(any(Runnable.class), eq("ProxyServer"));
+        assertTrue(testServerThread.wasStarted());
+        assertFalse(testServerThread.isDaemon());
+        assertTrue(testSession.isActive());
+        assertTrue(manager.getCurrentServer().isSsl());
+        assertEquals(manager.getCurrentServer().getSslHostName(), "www.example.com");
+        assertNotNull(manager.getCurrentServer().getServerCertificateGeneratorService());
+    }
+
+
 
     @Test
     void testStopServerStopsProxyAndCleansUp() {

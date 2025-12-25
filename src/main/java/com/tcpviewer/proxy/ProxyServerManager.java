@@ -8,6 +8,7 @@ import com.tcpviewer.lang.wrapper.ThreadWrapper;
 import com.tcpviewer.lang.wrapper.factory.ExecutorServiceFactory;
 import com.tcpviewer.lang.wrapper.factory.ThreadFactory;
 import com.tcpviewer.model.ProxySession;
+import com.tcpviewer.ssl.ServerCertificateGeneratorService;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,7 @@ public class ProxyServerManager {
     private final ThreadFactory threadFactory;
     private final ExecutorServiceFactory executorServiceFactory;
     private final ErrorHandlerService errorHandlerService;
+    private final ServerCertificateGeneratorService serverCertificateGeneratorService;
 
     private ProxyServer currentServer;
     private ThreadWrapper serverThread;
@@ -42,13 +44,15 @@ public class ProxyServerManager {
                               ServerSocketFactory serverSocketFactory,
                               ThreadFactory threadFactory,
                               ExecutorServiceFactory executorServiceFactory,
-                              ErrorHandlerService errorHandlerService) {
+                              ErrorHandlerService errorHandlerService,
+                              ServerCertificateGeneratorService serverCertificateGeneratorService) {
         this.proxyExecutor = proxyExecutor;
         this.socketFactory = socketFactory;
         this.serverSocketFactory = serverSocketFactory;
         this.threadFactory = threadFactory;
         this.executorServiceFactory = executorServiceFactory;
         this.errorHandlerService = errorHandlerService;
+        this.serverCertificateGeneratorService = serverCertificateGeneratorService;
     }
 
     /**
@@ -71,9 +75,11 @@ public class ProxyServerManager {
 
         // Create and start proxy server
         currentServer = new ProxyServer(
+                session.isSsl(),
                 session.getLocalIp(),
                 session.getLocalPort(),
                 session.getTargetHost(),
+                session.getSslHostName(),
                 session.getTargetPort(),
                 dataCaptureListener,
                 connectionAcceptedCallback,
@@ -81,7 +87,8 @@ public class ProxyServerManager {
                 socketFactory,
                 serverSocketFactory,
                 threadFactory,
-                errorHandlerService
+                errorHandlerService,
+                serverCertificateGeneratorService
         );
 
         serverThread = threadFactory.createThread(currentServer, "ProxyServer");
@@ -116,6 +123,10 @@ public class ProxyServerManager {
 
             logger.info("Proxy server stopped");
         }
+    }
+
+    public ProxyServer getCurrentServer() {
+        return currentServer;
     }
 
     /**

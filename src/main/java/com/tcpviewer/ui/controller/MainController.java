@@ -161,7 +161,7 @@ public class MainController {
                         dialogController.getLocalIp(),
                         dialogController.getLocalPort(),
                         dialogController.getTargetHost(),
-                        dialogController.getTargetPort()
+                        dialogController.getTargetPort(), dialogController.isSSLEnabled(), dialogController.getSSLHost()
                 );
 
                 proxyService.startProxySession(session);

@@ -1,6 +1,8 @@
 package com.tcpviewer.ui.controller;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
@@ -30,7 +32,17 @@ public class StartDialogController {
     private TextField targetPortField;
 
     @FXML
+    private CheckBox sslEnabled;
+
+    @FXML
+    private  Label sslHostLabel;
+
+    @FXML
+    private  TextField sslHost;
+
+    @FXML
     private Label validationLabel;
+
 
     private boolean confirmed = false;
 
@@ -39,7 +51,17 @@ public class StartDialogController {
      */
     @FXML
     public void initialize() {
+        validationLabel.managedProperty().bind(validationLabel.visibleProperty());
+        sslHost.managedProperty().bind(sslHost.visibleProperty());
+        sslHostLabel.managedProperty().bind(sslHostLabel.visibleProperty());
         logger.info("StartDialogController initialized");
+    }
+
+    @FXML
+    private void onSSLCheckBoxClicked() {
+        sslHostLabel.setVisible(sslEnabled.isSelected());
+        sslHost.setVisible(sslEnabled.isSelected());
+        resizeDialog();
     }
 
     /**
@@ -74,6 +96,7 @@ public class StartDialogController {
         String localPort = localPortField.getText().trim();
         String targetHost = targetHostField.getText().trim();
         String targetPort = targetPortField.getText().trim();
+        String sslHostValue = sslHost.getText().trim();
 
         if (localIp.isEmpty()) {
             showValidationError("Local IP cannot be empty");
@@ -106,6 +129,13 @@ public class StartDialogController {
             return false;
         }
 
+        if  (sslEnabled.isSelected()) {
+            if (sslHostValue.isEmpty()) {
+                showValidationError("SSL host name cannot be empty");
+                return false;
+            }
+        }
+
         try {
             int port = Integer.parseInt(targetPort);
             if (port < 1 || port > 65535) {
@@ -126,6 +156,7 @@ public class StartDialogController {
     private void showValidationError(String message) {
         validationLabel.setText(message);
         validationLabel.setVisible(true);
+        resizeDialog();
     }
 
     /**
@@ -134,6 +165,13 @@ public class StartDialogController {
     private void closeDialog() {
         Stage stage = (Stage) localIpField.getScene().getWindow();
         stage.close();
+    }
+
+    private void resizeDialog() {
+        Platform.runLater(() -> {
+            Stage stage = (Stage) localIpField.getScene().getWindow();
+            stage.sizeToScene();
+        });
     }
 
     /**
@@ -170,4 +208,24 @@ public class StartDialogController {
     public int getTargetPort() {
         return Integer.parseInt(targetPortField.getText().trim());
     }
+
+    /**
+     * Returns true, if SSL ist to used
+     */
+    public boolean isSSLEnabled() {
+        return sslEnabled.isSelected();
+    }
+
+    /**
+     * Returns true, if SSL ist to used
+     */
+    public String getSSLHost() {
+        if (!isSSLEnabled()) {
+            return null;
+        } else {
+            return sslHost.getText().trim();
+        }
+    }
+
+
 }
