@@ -39,7 +39,7 @@ class ProxyServiceTest {
         public boolean isRunning = false;
 
         public TestProxyServerManager() {
-            super(null, null, null, null, null, null);
+            super(null, null, null, null, null, null, null);
         }
 
         @Override
@@ -214,7 +214,7 @@ class ProxyServiceTest {
 
     @BeforeEach
     void setUp() {
-        testSession = new ProxySession("127.0.0.1", 8080, "example.com", 80);
+        testSession = new ProxySession("127.0.0.1", 8080, "example.com", 80, false, null);
         testConnectionList = FXCollections.observableArrayList();
 
         // Use test stubs for service classes and real instance for DataProcessor
@@ -240,12 +240,26 @@ class ProxyServiceTest {
     }
 
     @Test
+    void testStartSSLProxySessionC() {
+        // Act
+        ProxySession sslTestSession = new ProxySession("127.0.0.1", 8080, "10.20.30.40", 80, true, "www.example.com");
+        service.startProxySession(sslTestSession);
+
+        // Assert
+        assertEquals(1, testConnectionManager.clearCallCount);
+        assertEquals(1, testServerManager.startServerCallCount);
+        assertSame(sslTestSession, testServerManager.lastStartSession);
+        assertEquals(sslTestSession, service.getCurrentSession());
+        assertTrue(sslTestSession.isActive());
+    }
+
+    @Test
     void testStartProxySessionThrowsExceptionIfAlreadyActive() {
         // Arrange
         service.startProxySession(testSession);
 
         // Create new session for second call
-        ProxySession newSession = new ProxySession("127.0.0.1", 8081, "example.com", 80);
+        ProxySession newSession = new ProxySession("127.0.0.1", 8081, "example.com", 80, false, null);
 
         // Act & Assert
         assertThrows(IllegalStateException.class, () ->
@@ -473,7 +487,7 @@ class ProxyServiceTest {
         service.startProxySession(testSession);
         service.stopProxySession();
 
-        ProxySession newSession = new ProxySession("127.0.0.1", 8081, "example.com", 80);
+        ProxySession newSession = new ProxySession("127.0.0.1", 8081, "example.com", 80, false, null);
         service.startProxySession(newSession);
 
         // Assert - second start succeeded

@@ -8,6 +8,7 @@ import com.tcpviewer.io.wrapper.factory.ServerSocketFactory;
 import com.tcpviewer.io.wrapper.factory.SocketFactory;
 import com.tcpviewer.lang.wrapper.ExecutorServiceWrapper;
 import com.tcpviewer.lang.wrapper.factory.ThreadFactory;
+import com.tcpviewer.ssl.ServerCertificateGeneratorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,9 +26,11 @@ public class ProxyServer implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(ProxyServer.class);
 
+    private  final boolean ssl;
     private final String localIp;
     private final int localPort;
     private final String targetHost;
+    private final String sslHostName;
     private final int targetPort;
     private final DataCaptureListener dataCaptureListener;
     private final ConnectionAcceptedCallback connectionAcceptedCallback;
@@ -38,19 +41,23 @@ public class ProxyServer implements Runnable {
     private final ErrorHandlerService errorHandlerService;
 
     private ServerSocketWrapper serverSocket;
+    private ServerCertificateGeneratorService serverCertificateGeneratorService;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
-    public ProxyServer(String localIp, int localPort, String targetHost, int targetPort,
+    public ProxyServer(boolean ssl, String localIp, int localPort, String targetHost ,String sssHostName, int targetPort,
                        DataCaptureListener dataCaptureListener,
                        ConnectionAcceptedCallback connectionAcceptedCallback,
                        ExecutorServiceWrapper executorService,
                        SocketFactory socketFactory,
                        ServerSocketFactory serverSocketFactory,
                        ThreadFactory threadFactory,
-                       ErrorHandlerService errorHandlerService) {
+                       ErrorHandlerService errorHandlerService,
+                       ServerCertificateGeneratorService serverCertificateGeneratorService) {
+        this.ssl = ssl;
         this.localIp = localIp;
         this.localPort = localPort;
         this.targetHost = targetHost;
+        this.sslHostName = sssHostName;
         this.targetPort = targetPort;
         this.dataCaptureListener = dataCaptureListener;
         this.connectionAcceptedCallback = connectionAcceptedCallback;
@@ -59,18 +66,33 @@ public class ProxyServer implements Runnable {
         this.serverSocketFactory = serverSocketFactory;
         this.threadFactory = threadFactory;
         this.errorHandlerService = errorHandlerService;
+        this.serverCertificateGeneratorService = serverCertificateGeneratorService;
     }
 
     @Override
     public void run() {
         try {
-            serverSocket = serverSocketFactory.createServerSocket();
+            if (ssl) {
+                try {
+                    ServerCertificateGeneratorService.GeneratedCertificate certificate = serverCertificateGeneratorService.generateServerCertificate(sslHostName, 365);
+                    serverSocket = serverSocketFactory.createServerSocket(certificate.keyStore());
+                } catch (Exception e) {
+                    throw new RuntimeException("Error creating ssl server socket", e);
+                }
+            } else {
+                serverSocket = serverSocketFactory.createServerSocket(null);
+            }
             serverSocket.setReuseAddress(true);
             serverSocket.bind(new InetSocketAddress(localIp, localPort));
             running.set(true);
 
-            logger.info("Proxy server started on {}:{}, forwarding to {}:{}",
-                       localIp, localPort, targetHost, targetPort);
+            if (!ssl) {
+                logger.info("Plain Proxy server started on {}:{}, forwarding to {}:{}",
+                        localIp, localPort, targetHost, targetPort);
+            } else {
+                logger.info("SSL Proxy server started on {}:{}, forwarding to {}:{}, ssl  host name is {}",
+                        localIp, localPort, targetHost, targetPort, sslHostName);
+            }
 
             while (running.get() && !threadFactory.currentThread().isInterrupted()) {
                 try {
@@ -120,8 +142,8 @@ public class ProxyServer implements Runnable {
 
             // Create and submit connection handler
             ProxyConnectionHandler handler = new ProxyConnectionHandler(
-                    clientSocket, targetHost, targetPort,
-                    dataCaptureListener, connectionId, socketFactory, threadFactory
+                    clientSocket, targetHost,targetPort,
+                    dataCaptureListener, connectionId, socketFactory, threadFactory, ssl, sslHostName
             );
 
             executorService.submit(handler);
@@ -169,5 +191,17 @@ public class ProxyServer implements Runnable {
 
     public boolean isRunning() {
         return running.get();
+    }
+
+    public boolean isSsl() {
+        return ssl;
+    }
+
+    public String getSslHostName() {
+        return sslHostName;
+    }
+
+    public ServerCertificateGeneratorService getServerCertificateGeneratorService() {
+        return serverCertificateGeneratorService;
     }
 }

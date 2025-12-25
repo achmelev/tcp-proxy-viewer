@@ -10,10 +10,12 @@ import com.tcpviewer.io.wrapper.factory.SocketFactory;
 import com.tcpviewer.lang.wrapper.ExecutorServiceWrapper;
 import com.tcpviewer.lang.wrapper.ThreadWrapper;
 import com.tcpviewer.lang.wrapper.factory.ThreadFactory;
+import com.tcpviewer.ssl.ServerCertificateGeneratorService;
 import com.tcpviewer.ui.error.ErrorDialogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -21,6 +23,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -297,20 +301,46 @@ class ProxyServerTest {
     @Test
     void testServerStartsAndBinds() throws Exception {
         // Arrange
-        when(mockServerSocketFactory.createServerSocket()).thenReturn(testServerSocket);
+        when(mockServerSocketFactory.createServerSocket(any())).thenReturn(testServerSocket);
         when(mockThreadFactory.currentThread()).thenReturn(testCurrentThread);
 
-        ProxyServer server = new ProxyServer(
-                localIp, localPort, targetHost, targetPort,
+        ProxyServer server = new ProxyServer(false,
+                localIp, localPort, targetHost,null,  targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService,null
         );
 
         // Act
         server.run();
 
         // Assert
-        verify(mockServerSocketFactory).createServerSocket();
+        verify(mockServerSocketFactory).createServerSocket(null);
+        assertTrue(testServerSocket.getReuseAddress());
+        assertNotNull(testServerSocket.boundAddress);
+        assertTrue(testServerSocket.isClosed()); // Closed in finally
+    }
+
+    @Test
+    void testServerStartsAndBindsSSL() throws Exception {
+        // Arrange
+        when(mockServerSocketFactory.createServerSocket(any())).thenReturn(testServerSocket);
+        when(mockThreadFactory.currentThread()).thenReturn(testCurrentThread);
+
+        ProxyServer server = new ProxyServer(true,
+                localIp, localPort, targetHost,"www.example.com",  targetPort,
+                mockDataListener, mockConnectionCallback,
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService,new ServerCertificateGeneratorService()
+        );
+
+        // Act
+        server.run();
+
+        // Assert
+        ArgumentCaptor<KeyStore> captor = ArgumentCaptor.forClass(KeyStore.class);
+        verify(mockServerSocketFactory).createServerSocket(captor.capture());
+        KeyStore keyStore = captor.getValue();
+        X509Certificate cert = (X509Certificate)keyStore.getCertificate("server");
+        assertEquals(cert.getSubjectX500Principal().getName(), "CN=www.example.com");
         assertTrue(testServerSocket.getReuseAddress());
         assertNotNull(testServerSocket.boundAddress);
         assertTrue(testServerSocket.isClosed()); // Closed in finally
@@ -319,7 +349,7 @@ class ProxyServerTest {
     @Test
     void testAcceptsMultipleConnections() throws Exception {
         // Arrange
-        when(mockServerSocketFactory.createServerSocket()).thenReturn(testServerSocket);
+        when(mockServerSocketFactory.createServerSocket(any())).thenReturn(testServerSocket);
         when(mockThreadFactory.currentThread()).thenReturn(testCurrentThread);
 
         TestSocketWrapper client1 = new TestSocketWrapper("192.168.1.100", 50001);
@@ -328,10 +358,10 @@ class ProxyServerTest {
         testServerSocket.addSocketToAccept(client1);
         testServerSocket.addSocketToAccept(client2);
 
-        ProxyServer server = new ProxyServer(
-                localIp, localPort, targetHost, targetPort,
+        ProxyServer server = new ProxyServer(false,
+                localIp, localPort, targetHost,null, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService,null
         );
 
         // Act
@@ -344,16 +374,38 @@ class ProxyServerTest {
     @Test
     void testConnectionCallbackInvoked() throws Exception {
         // Arrange
-        when(mockServerSocketFactory.createServerSocket()).thenReturn(testServerSocket);
+        when(mockServerSocketFactory.createServerSocket(any())).thenReturn(testServerSocket);
         when(mockThreadFactory.currentThread()).thenReturn(testCurrentThread);
 
         TestSocketWrapper client = new TestSocketWrapper("192.168.1.100", 50001);
         testServerSocket.addSocketToAccept(client);
 
-        ProxyServer server = new ProxyServer(
-                localIp, localPort, targetHost, targetPort,
+        ProxyServer server = new ProxyServer(false,
+                localIp, localPort, targetHost,null, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService, null
+        );
+
+        // Act
+        server.run();
+
+        // Assert
+        verify(mockConnectionCallback).onConnectionAccepted(any(), eq(client));
+    }
+
+    @Test
+    void testSSLConnectionCallbackInvoked() throws Exception {
+        // Arrange
+        when(mockServerSocketFactory.createServerSocket(any())).thenReturn(testServerSocket);
+        when(mockThreadFactory.currentThread()).thenReturn(testCurrentThread);
+
+        TestSocketWrapper client = new TestSocketWrapper("192.168.1.100", 50001);
+        testServerSocket.addSocketToAccept(client);
+
+        ProxyServer server = new ProxyServer(true,
+                localIp, localPort, targetHost,"www.example.com", targetPort,
+                mockDataListener, mockConnectionCallback,
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService, new ServerCertificateGeneratorService()
         );
 
         // Act
@@ -366,16 +418,16 @@ class ProxyServerTest {
     @Test
     void testHandlerSubmittedToExecutor() throws Exception {
         // Arrange
-        when(mockServerSocketFactory.createServerSocket()).thenReturn(testServerSocket);
+        when(mockServerSocketFactory.createServerSocket(any())).thenReturn(testServerSocket);
         when(mockThreadFactory.currentThread()).thenReturn(testCurrentThread);
 
         TestSocketWrapper client = new TestSocketWrapper("192.168.1.100", 50001);
         testServerSocket.addSocketToAccept(client);
 
-        ProxyServer server = new ProxyServer(
-                localIp, localPort, targetHost, targetPort,
+        ProxyServer server = new ProxyServer(false,
+                localIp, localPort, targetHost,null, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService, null
         );
 
         // Act
@@ -389,16 +441,16 @@ class ProxyServerTest {
     @Test
     void testNullCallbackDoesNotCauseNPE() throws Exception {
         // Arrange
-        when(mockServerSocketFactory.createServerSocket()).thenReturn(testServerSocket);
+        when(mockServerSocketFactory.createServerSocket(any())).thenReturn(testServerSocket);
         when(mockThreadFactory.currentThread()).thenReturn(testCurrentThread);
 
         TestSocketWrapper client = new TestSocketWrapper("192.168.1.100", 50001);
         testServerSocket.addSocketToAccept(client);
 
-        ProxyServer server = new ProxyServer(
-                localIp, localPort, targetHost, targetPort,
+        ProxyServer server = new ProxyServer(false,
+                localIp, localPort, targetHost, null, targetPort,
                 mockDataListener, null, // null callback
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService, null
         );
 
         // Act & Assert - should not throw NPE
@@ -409,10 +461,10 @@ class ProxyServerTest {
     @Test
     void testStopMethodSetsRunningToFalse() throws Exception {
         // Arrange
-        ProxyServer server = new ProxyServer(
-                localIp, localPort, targetHost, targetPort,
+        ProxyServer server = new ProxyServer(false,
+                localIp, localPort, targetHost,null,  targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService, null
         );
 
         // Act - call stop before run (sets running to false)
@@ -425,15 +477,15 @@ class ProxyServerTest {
     @Test
     void testSocketExceptionDuringAcceptBreaksLoop() throws Exception {
         // Arrange
-        when(mockServerSocketFactory.createServerSocket()).thenReturn(testServerSocket);
+        when(mockServerSocketFactory.createServerSocket(any())).thenReturn(testServerSocket);
         when(mockThreadFactory.currentThread()).thenReturn(testCurrentThread);
 
         // No sockets added, so accept() will throw SocketException immediately
 
-        ProxyServer server = new ProxyServer(
-                localIp, localPort, targetHost, targetPort,
+        ProxyServer server = new ProxyServer(false,
+                localIp, localPort, targetHost, null, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService, null
         );
 
         // Act & Assert - should not throw, should exit gracefully
@@ -445,12 +497,12 @@ class ProxyServerTest {
     void testIOExceptionDuringBindLogsAndReturns() throws Exception {
         // Arrange
         testServerSocket.setBindException(new IOException("Address already in use"));
-        when(mockServerSocketFactory.createServerSocket()).thenReturn(testServerSocket);
+        when(mockServerSocketFactory.createServerSocket(any())).thenReturn(testServerSocket);
 
-        ProxyServer server = new ProxyServer(
-                localIp, localPort, targetHost, targetPort,
+        ProxyServer server = new ProxyServer(false,
+                localIp, localPort, targetHost, null, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService, null
         );
 
         // Act - Should not throw exception, just log and return
@@ -463,16 +515,16 @@ class ProxyServerTest {
     @Test
     void testRunningFlagSetCorrectly() throws Exception {
         // Arrange
-        when(mockServerSocketFactory.createServerSocket()).thenReturn(testServerSocket);
+        when(mockServerSocketFactory.createServerSocket(any())).thenReturn(testServerSocket);
         when(mockThreadFactory.currentThread()).thenReturn(testCurrentThread);
 
         TestSocketWrapper client = new TestSocketWrapper("192.168.1.100", 50001);
         testServerSocket.addSocketToAccept(client);
 
-        ProxyServer server = new ProxyServer(
-                localIp, localPort, targetHost, targetPort,
+        ProxyServer server = new ProxyServer(false,
+                localIp, localPort, targetHost, null, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService, null
         );
 
         // Act
@@ -484,13 +536,13 @@ class ProxyServerTest {
     @Test
     void testServerSocketClosedInFinally() throws Exception {
         // Arrange
-        when(mockServerSocketFactory.createServerSocket()).thenReturn(testServerSocket);
+        when(mockServerSocketFactory.createServerSocket(any())).thenReturn(testServerSocket);
         when(mockThreadFactory.currentThread()).thenReturn(testCurrentThread);
 
-        ProxyServer server = new ProxyServer(
-                localIp, localPort, targetHost, targetPort,
+        ProxyServer server = new ProxyServer(false,
+                localIp, localPort, targetHost,null, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService, null
         );
 
         // Act
@@ -503,7 +555,7 @@ class ProxyServerTest {
     @Test
     void testExceptionInCallbackDoesNotStopServer() throws Exception {
         // Arrange
-        when(mockServerSocketFactory.createServerSocket()).thenReturn(testServerSocket);
+        when(mockServerSocketFactory.createServerSocket(any())).thenReturn(testServerSocket);
         when(mockThreadFactory.currentThread()).thenReturn(testCurrentThread);
 
         TestSocketWrapper client1 = new TestSocketWrapper("192.168.1.100", 50001);
@@ -516,10 +568,10 @@ class ProxyServerTest {
                 .doNothing()
                 .when(mockConnectionCallback).onConnectionAccepted(any(), any());
 
-        ProxyServer server = new ProxyServer(
-                localIp, localPort, targetHost, targetPort,
+        ProxyServer server = new ProxyServer(false,
+                localIp, localPort, targetHost, null, targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService, null
         );
 
         // Act
@@ -533,7 +585,7 @@ class ProxyServerTest {
     @Test
     void testThreadInterruptionBreaksLoop() throws Exception {
         // Arrange
-        when(mockServerSocketFactory.createServerSocket()).thenReturn(testServerSocket);
+        when(mockServerSocketFactory.createServerSocket(any())).thenReturn(testServerSocket);
 
         // Simulate thread interruption
         TestThreadWrapper interruptedThread = new TestThreadWrapper();
@@ -544,10 +596,10 @@ class ProxyServerTest {
         testServerSocket.addSocketToAccept(new TestSocketWrapper("192.168.1.100", 50001));
         testServerSocket.addSocketToAccept(new TestSocketWrapper("192.168.1.101", 50002));
 
-        ProxyServer server = new ProxyServer(
-                localIp, localPort, targetHost, targetPort,
+        ProxyServer server = new ProxyServer(false,
+                localIp, localPort, targetHost, null,  targetPort,
                 mockDataListener, mockConnectionCallback,
-                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService
+                testExecutor, mockSocketFactory, mockServerSocketFactory, mockThreadFactory, testErrorHandlerService, null
         );
 
         // Act

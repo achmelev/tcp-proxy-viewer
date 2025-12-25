@@ -243,7 +243,7 @@ class ProxyConnectionHandlerTest {
     @Test
     void testSuccessfulConnectionHandling() throws Exception {
         // Arrange
-        when(mockSocketFactory.createSocket(targetHost, targetPort)).thenReturn(targetSocket);
+        when(mockSocketFactory.createSocket(targetHost, targetPort, false, null)).thenReturn(targetSocket);
 
         // Capture the runnables passed to thread factory
         AtomicReference<Runnable> clientToTargetRunnable = new AtomicReference<>();
@@ -263,14 +263,14 @@ class ProxyConnectionHandlerTest {
 
         ProxyConnectionHandler handler = new ProxyConnectionHandler(
                 clientSocket, targetHost, targetPort, mockListener,
-                connectionId, mockSocketFactory, mockThreadFactory
+                connectionId, mockSocketFactory, mockThreadFactory, false, null
         );
 
         // Act
         handler.run();
 
         // Assert
-        verify(mockSocketFactory).createSocket(targetHost, targetPort);
+        verify(mockSocketFactory).createSocket(targetHost, targetPort, false, null);
         assertTrue(targetSocket.getTcpNoDelay());
         assertNotNull(clientToTargetRunnable.get());
         assertNotNull(targetToClientRunnable.get());
@@ -286,19 +286,19 @@ class ProxyConnectionHandlerTest {
     @Test
     void testIOExceptionDuringTargetConnection() throws Exception {
         // Arrange
-        when(mockSocketFactory.createSocket(targetHost, targetPort))
+        when(mockSocketFactory.createSocket(targetHost, targetPort, false, null))
                 .thenThrow(new IOException("Connection refused"));
 
         ProxyConnectionHandler handler = new ProxyConnectionHandler(
                 clientSocket, targetHost, targetPort, mockListener,
-                connectionId, mockSocketFactory, mockThreadFactory
+                connectionId, mockSocketFactory, mockThreadFactory, false, null
         );
 
         // Act
         assertDoesNotThrow(() -> handler.run());
 
         // Assert
-        verify(mockSocketFactory).createSocket(targetHost, targetPort);
+        verify(mockSocketFactory).createSocket(targetHost, targetPort, false, null);
         verify(mockThreadFactory, never()).createThread(any(), anyString());
         assertTrue(clientSocket.isClosed());
         verify(mockListener).onConnectionClosed(connectionId);
@@ -307,7 +307,7 @@ class ProxyConnectionHandlerTest {
     @Test
     void testInterruptedExceptionDuringJoin() throws Exception {
         // Arrange
-        when(mockSocketFactory.createSocket(targetHost, targetPort)).thenReturn(targetSocket);
+        when(mockSocketFactory.createSocket(targetHost, targetPort, false, null)).thenReturn(targetSocket);
 
         when(mockThreadFactory.createThread(any(Runnable.class), contains("C2T")))
                 .thenReturn(testThread1);
@@ -320,7 +320,7 @@ class ProxyConnectionHandlerTest {
 
         ProxyConnectionHandler handler = new ProxyConnectionHandler(
                 clientSocket, targetHost, targetPort, mockListener,
-                connectionId, mockSocketFactory, mockThreadFactory
+                connectionId, mockSocketFactory, mockThreadFactory, false, null
         );
 
         // Act
@@ -337,14 +337,14 @@ class ProxyConnectionHandlerTest {
     @Test
     void testNullListenerDoesNotCauseNPE() throws Exception {
         // Arrange
-        when(mockSocketFactory.createSocket(targetHost, targetPort)).thenReturn(targetSocket);
+        when(mockSocketFactory.createSocket(targetHost, targetPort, false, null)).thenReturn(targetSocket);
         when(mockThreadFactory.createThread(any(Runnable.class), anyString()))
                 .thenReturn(testThread1)
                 .thenReturn(testThread2);
 
         ProxyConnectionHandler handler = new ProxyConnectionHandler(
                 clientSocket, targetHost, targetPort, null, // null listener
-                connectionId, mockSocketFactory, mockThreadFactory
+                connectionId, mockSocketFactory, mockThreadFactory, false, null
         );
 
         // Act & Assert - should not throw NPE
@@ -356,7 +356,7 @@ class ProxyConnectionHandlerTest {
     @Test
     void testExceptionInListenerCallbackIsHandled() throws Exception {
         // Arrange
-        when(mockSocketFactory.createSocket(targetHost, targetPort)).thenReturn(targetSocket);
+        when(mockSocketFactory.createSocket(targetHost, targetPort, false, null)).thenReturn(targetSocket);
         when(mockThreadFactory.createThread(any(Runnable.class), anyString()))
                 .thenReturn(testThread1)
                 .thenReturn(testThread2);
@@ -366,7 +366,7 @@ class ProxyConnectionHandlerTest {
 
         ProxyConnectionHandler handler = new ProxyConnectionHandler(
                 clientSocket, targetHost, targetPort, mockListener,
-                connectionId, mockSocketFactory, mockThreadFactory
+                connectionId, mockSocketFactory, mockThreadFactory, false, null
         );
 
         // Act & Assert - exception in listener should be caught and logged, not propagated
@@ -377,7 +377,7 @@ class ProxyConnectionHandlerTest {
     @Test
     void testSocketsClosedEvenWhenCloseThrowsException() throws Exception {
         // Arrange
-        when(mockSocketFactory.createSocket(targetHost, targetPort)).thenReturn(targetSocket);
+        when(mockSocketFactory.createSocket(targetHost, targetPort, false, null)).thenReturn(targetSocket);
         when(mockThreadFactory.createThread(any(Runnable.class), anyString()))
                 .thenReturn(testThread1)
                 .thenReturn(testThread2);
@@ -386,7 +386,7 @@ class ProxyConnectionHandlerTest {
 
         ProxyConnectionHandler handler = new ProxyConnectionHandler(
                 clientSocket, targetHost, targetPort, mockListener,
-                connectionId, mockSocketFactory, mockThreadFactory
+                connectionId, mockSocketFactory, mockThreadFactory, false, null
         );
 
         // Act & Assert - exception during close should be swallowed
@@ -398,14 +398,14 @@ class ProxyConnectionHandlerTest {
     @Test
     void testBothSocketsClosedInFinally() throws Exception {
         // Arrange
-        when(mockSocketFactory.createSocket(targetHost, targetPort)).thenReturn(targetSocket);
+        when(mockSocketFactory.createSocket(targetHost, targetPort, false, null)).thenReturn(targetSocket);
         when(mockThreadFactory.createThread(any(Runnable.class), anyString()))
                 .thenReturn(testThread1)
                 .thenReturn(testThread2);
 
         ProxyConnectionHandler handler = new ProxyConnectionHandler(
                 clientSocket, targetHost, targetPort, mockListener,
-                connectionId, mockSocketFactory, mockThreadFactory
+                connectionId, mockSocketFactory, mockThreadFactory, false, null
         );
 
         // Act
@@ -419,14 +419,14 @@ class ProxyConnectionHandlerTest {
     @Test
     void testTcpNoDelaySetOnTargetSocket() throws Exception {
         // Arrange
-        when(mockSocketFactory.createSocket(targetHost, targetPort)).thenReturn(targetSocket);
+        when(mockSocketFactory.createSocket(targetHost, targetPort, false, null )).thenReturn(targetSocket);
         when(mockThreadFactory.createThread(any(Runnable.class), anyString()))
                 .thenReturn(testThread1)
                 .thenReturn(testThread2);
 
         ProxyConnectionHandler handler = new ProxyConnectionHandler(
                 clientSocket, targetHost, targetPort, mockListener,
-                connectionId, mockSocketFactory, mockThreadFactory
+                connectionId, mockSocketFactory, mockThreadFactory, false, null
         );
 
         // Act
@@ -439,7 +439,7 @@ class ProxyConnectionHandlerTest {
     @Test
     void testTwoThreadsCreatedForBidirectionalForwarding() throws Exception {
         // Arrange
-        when(mockSocketFactory.createSocket(targetHost, targetPort)).thenReturn(targetSocket);
+        when(mockSocketFactory.createSocket(targetHost, targetPort, false, null)).thenReturn(targetSocket);
 
         AtomicReference<String> thread1Name = new AtomicReference<>();
         AtomicReference<String> thread2Name = new AtomicReference<>();
@@ -456,7 +456,7 @@ class ProxyConnectionHandlerTest {
 
         ProxyConnectionHandler handler = new ProxyConnectionHandler(
                 clientSocket, targetHost, targetPort, mockListener,
-                connectionId, mockSocketFactory, mockThreadFactory
+                connectionId, mockSocketFactory, mockThreadFactory, false, null
         );
 
         // Act
@@ -474,14 +474,14 @@ class ProxyConnectionHandlerTest {
     @Test
     void testThreadsStartedBeforeJoin() throws Exception {
         // Arrange
-        when(mockSocketFactory.createSocket(targetHost, targetPort)).thenReturn(targetSocket);
+        when(mockSocketFactory.createSocket(targetHost, targetPort, false, null )).thenReturn(targetSocket);
         when(mockThreadFactory.createThread(any(Runnable.class), anyString()))
                 .thenReturn(testThread1)
                 .thenReturn(testThread2);
 
         ProxyConnectionHandler handler = new ProxyConnectionHandler(
                 clientSocket, targetHost, targetPort, mockListener,
-                connectionId, mockSocketFactory, mockThreadFactory
+                connectionId, mockSocketFactory, mockThreadFactory, false, null
         );
 
         // Act
@@ -497,12 +497,12 @@ class ProxyConnectionHandlerTest {
     @Test
     void testTargetSocketNotClosedIfNullDueToConnectionFailure() throws Exception {
         // Arrange - target socket creation fails
-        when(mockSocketFactory.createSocket(targetHost, targetPort))
+        when(mockSocketFactory.createSocket(targetHost, targetPort, false, null))
                 .thenThrow(new IOException("Connection refused"));
 
         ProxyConnectionHandler handler = new ProxyConnectionHandler(
                 clientSocket, targetHost, targetPort, mockListener,
-                connectionId, mockSocketFactory, mockThreadFactory
+                connectionId, mockSocketFactory, mockThreadFactory, false, null
         );
 
         // Act

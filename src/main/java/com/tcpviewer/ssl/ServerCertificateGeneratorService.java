@@ -50,13 +50,15 @@ public class ServerCertificateGeneratorService {
         KeyPair serverKeyPair = kpg.generateKeyPair();
 
         X500Name subject = new X500Name("CN=" + serverName);
-        X500Name issuer = new X500Name(caCertificate.getSubjectX500Principal().getName());
+        X500Name issuer = X500Name.getInstance(caCertificate.getSubjectX500Principal().getEncoded());
 
         Instant now = Instant.now();
         Date notBefore = Date.from(now.minusSeconds(60));
         Date notAfter = Date.from(now.plusSeconds(validityDays * 86400L));
 
         BigInteger serial = BigInteger.valueOf(System.currentTimeMillis());
+
+        JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
 
         JcaX509v3CertificateBuilder certBuilder =
                 new JcaX509v3CertificateBuilder(
@@ -95,6 +97,18 @@ public class ServerCertificateGeneratorService {
                 )
         );
 
+        certBuilder.addExtension(
+                Extension.authorityKeyIdentifier,
+                false,
+                extUtils.createAuthorityKeyIdentifier(caCertificate.getPublicKey())
+        );
+
+        certBuilder.addExtension(
+                Extension.subjectKeyIdentifier,
+                false,
+                extUtils.createSubjectKeyIdentifier(serverKeyPair.getPublic())
+        );
+
         ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA")
                 .setProvider("BC")
                 .build(caPrivateKey);
@@ -111,8 +125,8 @@ public class ServerCertificateGeneratorService {
         keyStore.load(null, null);
         // 2. Store private key and certificate
         char[] keyPassword = "changeit".toCharArray(); // required, even for in-memory keystore
-        Certificate[] chain = new Certificate[]{caCertificate};
-        keyStore.setKeyEntry("server", caPrivateKey, keyPassword, chain);
+        Certificate[] chain = new Certificate[]{serverCert};
+        keyStore.setKeyEntry("server", serverKeyPair.getPrivate(), keyPassword, chain);
 
 
         return new GeneratedCertificate(serverCert, serverKeyPair.getPrivate(), keyStore);

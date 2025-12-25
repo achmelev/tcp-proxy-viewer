@@ -26,10 +26,12 @@ public class ProxyConnectionHandler implements Runnable {
     private final UUID connectionId;
     private final SocketFactory socketFactory;
     private final ThreadFactory threadFactory;
+    private  boolean ssl;
+    private String sslHostName;
 
     public ProxyConnectionHandler(SocketWrapper clientSocket, String targetHost, int targetPort,
                                    DataCaptureListener listener, UUID connectionId,
-                                   SocketFactory socketFactory, ThreadFactory threadFactory) {
+                                   SocketFactory socketFactory, ThreadFactory threadFactory, boolean ssl, String sslHostName) {
         this.clientSocket = clientSocket;
         this.targetHost = targetHost;
         this.targetPort = targetPort;
@@ -37,6 +39,8 @@ public class ProxyConnectionHandler implements Runnable {
         this.connectionId = connectionId;
         this.socketFactory = socketFactory;
         this.threadFactory = threadFactory;
+        this.ssl = ssl;
+        this.sslHostName  = sslHostName;
     }
 
     @Override
@@ -47,7 +51,7 @@ public class ProxyConnectionHandler implements Runnable {
                        targetHost, targetPort, connectionId);
 
             // Connect to target server
-            targetSocket = socketFactory.createSocket(targetHost, targetPort);
+            targetSocket = socketFactory.createSocket(targetHost, targetPort, ssl, sslHostName);
             targetSocket.setTcpNoDelay(true);
 
             logger.info("Connected to target for connection {}", connectionId);

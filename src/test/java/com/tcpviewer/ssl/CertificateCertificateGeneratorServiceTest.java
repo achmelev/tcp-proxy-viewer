@@ -57,9 +57,7 @@ class CertificateCertificateGeneratorServiceTest {
         assertNotNull(cert);
         assertNotNull(key);
 
-        assertTrue(
-                serverCert.getIssuerX500Principal().getName().contains("CN=TCPViewer")
-        );
+        assertEquals(serverCert.getIssuerX500Principal().getName(), service.getCaCertificate().getSubjectX500Principal().getName());
 
         assertTrue(
                 serverCert.getSubjectX500Principal().getName().contains("CN=" + serverName)
