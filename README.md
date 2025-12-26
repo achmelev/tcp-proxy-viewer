@@ -58,7 +58,7 @@ When SSL/TLS mode is enabled:
 
 ⚠️ **Important:**  
 For clients to accept the proxy certificate without warnings or errors, the generated certificate (or its issuing CA, if applicable) must be trusted by the client system or application.
-Download the issuing CA [`here`](src/main/resources/ssl/cacert.pem) 
+Get the issuing CA [`here`](src/main/resources/ssl/cacert.pem) 
 
 ## How It Works
 
